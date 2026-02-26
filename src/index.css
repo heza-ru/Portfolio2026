@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  /* ── Global Defaults ── */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-[#0A0A0A] text-[#F0EDE8] overflow-x-hidden;
+    font-family: 'Satoshi', sans-serif;
+    /* Hide default cursor everywhere — custom cursor takes over on pointer devices */
+    cursor: none;
+  }
+
+  /* Restore cursor on touch/hover:none devices */
+  @media (hover: none) {
+    body {
+      cursor: auto;
+    }
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  /* GPU-accelerate common transform layers */
+  section,
+  [data-parallax] {
+    will-change: transform;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+@layer utilities {
+
+  /* Clip-path helper used in the Navbar takeover */
+  .clip-circle-none {
+    clip-path: circle(0% at 50% 50%);
+  }
+
+  .clip-circle-full {
+    clip-path: circle(150% at 50% 50%);
+  }
+
+  /* ── Magnetic Buttons (Slide & Scale) ── */
+  .btn-magnetic {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* Add slight will-change to prevent jitter on scale */
+    will-change: transform;
+  }
+
+  .btn-magnetic:hover {
+    transform: scale(1.03);
+  }
+
+  /* Sliding background span inside .btn-magnetic */
+  .btn-magnetic>.bg-slider {
+    position: absolute;
+    inset: 0;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 0;
+  }
+
+  .btn-magnetic:hover>.bg-slider {
+    transform: translateY(0);
+  }
+
+  /* Ensure text sits above the sliding background */
+  .btn-magnetic>.btn-text {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ── Link Lift ── */
+  .link-lift {
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .link-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* ── Pixel Reveal ── */
+  /* The wrapper must have overflow:hidden so blocks don't bleed out */
+  .pixel-reveal-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* The block-grid overlay inside each pixel-reveal-wrap */
+  .pixel-reveal-wrap>div:last-child {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    overflow: hidden;
+  }
+
+  /* ── Sticky Cards ── */
+  .sticky-card {
+    border-radius: 0;
+  }
+
+  /* Support for CSS custom properties in sticky cards */
+  @supports (--custom: property) {
+    .sticky-card {
+      --after-opacity: 0;
+    }
+  }
+}
