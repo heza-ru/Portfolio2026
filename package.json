@@ -20,8 +20,8 @@
         "framer-motion": "^12.34.3",
         "gsap": "^3.12.5",
         "lucide-react": "^0.469.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
         "tailwind-merge": "^2.6.0",
         "three": "^0.171.0"
     },
