@@ -2,6 +2,7 @@ import React from 'react'
 import { ReactLenis } from '@studio-freight/react-lenis'
 import GlobalGrain from './components/GlobalGrain'
 import CustomCursor from './components/CustomCursor'
+import GlobalDigitalEffect from './components/GlobalDigitalEffect'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import About from './components/About'
@@ -17,6 +18,7 @@ function App() {
             <div className="min-h-screen text-[#F0EDE8] bg-[#0A0A0A] font-body relative">
                 <GlobalGrain />
                 <CustomCursor />
+                <GlobalDigitalEffect />
 
                 <main className="relative z-10">
                     <Hero isLoaded />
