@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 
 export default function HeroModel({ className = '' }) {
     const containerRef = useRef(null)
@@ -17,27 +18,44 @@ export default function HeroModel({ className = '' }) {
         const camera   = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000)
         camera.position.set(0, 0, 5)
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, precision: 'highp' })
         renderer.setSize(w, h)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-        renderer.outputColorSpace = THREE.SRGBColorSpace
-        renderer.shadowMap.enabled = true
+        renderer.outputColorSpace    = THREE.SRGBColorSpace
+        renderer.toneMapping         = THREE.ACESFilmicToneMapping
+        renderer.toneMappingExposure = 1.2
+        renderer.shadowMap.enabled   = true
+        renderer.shadowMap.type      = THREE.PCFSoftShadowMap
         container.appendChild(renderer.domElement)
 
-        // ── Lights ─────────────────────────────────────────────
-        scene.add(new THREE.AmbientLight(0xffffff, 1.2))
+        // ── Environment (PMREM from RoomEnvironment — gives PBR materials
+        //    realistic reflections and proper IBL lighting) ───────────────
+        const pmrem      = new THREE.PMREMGenerator(renderer)
+        pmrem.compileEquirectangularShader()
+        const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+        scene.environment    = envTexture
+        scene.environmentIntensity = 1.5
+        pmrem.dispose()
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 2.0)
+        // ── Lights ─────────────────────────────────────────────
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4))
+
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 2.5)
         dirLight.position.set(4, 6, 4)
+        dirLight.castShadow           = true
+        dirLight.shadow.mapSize.set(2048, 2048)
+        dirLight.shadow.camera.near   = 0.5
+        dirLight.shadow.camera.far    = 20
+        dirLight.shadow.bias          = -0.001
         scene.add(dirLight)
 
-        const fillLight = new THREE.DirectionalLight(0xa0c4ff, 0.6)
+        const fillLight = new THREE.DirectionalLight(0x88aaff, 1.2)
         fillLight.position.set(-4, -2, -4)
         scene.add(fillLight)
 
-        const pointLight = new THREE.PointLight(0xffffff, 1.0)
-        pointLight.position.set(0, 3, 3)
-        scene.add(pointLight)
+        const rimLight = new THREE.PointLight(0xffffff, 1.5)
+        rimLight.position.set(0, 2, -3)
+        scene.add(rimLight)
 
         // ── Load GLB ───────────────────────────────────────────
         const loader = new GLTFLoader()

@@ -51,6 +51,9 @@ export default function Works() {
     const scrollTrackRef = useRef(null)
 
     React.useEffect(() => {
+        // Normalise touch/pointer scroll so GSAP pin+scrub works on mobile
+        ScrollTrigger.normalizeScroll(true)
+
         const ctx = gsap.context(() => {
             const track  = scrollTrackRef.current
             const panels = gsap.utils.toArray('.work-panel')

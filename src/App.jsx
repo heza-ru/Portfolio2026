@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { ReactLenis } from '@studio-freight/react-lenis'
+import { ReactLenis, useLenis } from '@studio-freight/react-lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -37,6 +37,10 @@ import Footer from './components/Footer'
 
 function App() {
     const worksRef = useRef(null)
+
+    // Bridge Lenis smooth-scroll position into GSAP ScrollTrigger so pin/scrub
+    // animations fire correctly on every frame — critical for mobile touch scroll.
+    useLenis(ScrollTrigger.update)
 
     return (
         <ReactLenis root>
