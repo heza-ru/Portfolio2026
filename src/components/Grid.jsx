@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import PixelReveal from './PixelReveal'
+import ImageParallax from './ImageParallax'
 
 export default function Grid() {
     const container = useRef(null)
@@ -26,7 +27,7 @@ export default function Grid() {
     return (
         <section
             ref={container}
-            className="relative sticky top-0 h-screen w-full py-24 px-6 md:px-20 bg-[#0A0A0A] overflow-hidden flex flex-col"
+            className="relative h-screen w-full py-24 px-6 md:px-20 bg-[#0A0A0A] overflow-hidden flex flex-col"
         >
             {/* Background Ghost Numeral */}
             <motion.div
@@ -87,31 +88,33 @@ export default function Grid() {
                         </div>
                     </motion.div>
 
-                    {/* ── Ambient Image (2x1) — pixel reveal ── */}
+                    {/* ── Ambient Image (2x1) — pixel reveal + tilt parallax ── */}
                     <motion.div
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover="hover"
                         className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-2xl overflow-hidden relative group bg-black"
                     >
-                        {/* PixelReveal wraps the entire cell content */}
-                        <PixelReveal
-                            scrollReveal
-                            startCovered
-                            duration={1.0}
-                            blockDuration={0.05}
-                            delay={0.1}
-                            style={{ width: '100%', height: '100%' }}
-                        >
-                            <img
-                                src="https://images.unsplash.com/photo-1506501139174-099022df5260?q=80&w=800&auto=format&fit=crop"
-                                alt="Grid abstract"
-                                className="w-full h-full object-cover opacity-60 grayscale group-hover:scale-105 transition-transform duration-1000"
-                            />
-                            <div className="absolute bottom-6 left-6 font-mono text-xs z-10 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                                [Visual Core]
-                            </div>
-                        </PixelReveal>
+                        <ImageParallax style={{ width: '100%', height: '100%' }} intensity={14}>
+                            {/* PixelReveal wraps the entire cell content */}
+                            <PixelReveal
+                                scrollReveal
+                                startCovered
+                                duration={1.0}
+                                blockDuration={0.05}
+                                delay={0.1}
+                                style={{ width: '100%', height: '100%' }}
+                            >
+                                <img
+                                    src="https://images.unsplash.com/photo-1506501139174-099022df5260?q=80&w=800&auto=format&fit=crop"
+                                    alt="Grid abstract"
+                                    className="w-full h-full object-cover opacity-60 grayscale group-hover:scale-105 transition-transform duration-1000"
+                                />
+                                <div className="absolute bottom-6 left-6 font-mono text-xs z-10 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                                    [Visual Core]
+                                </div>
+                            </PixelReveal>
+                        </ImageParallax>
                     </motion.div>
 
                     {/* ── Marquee Strip (2x1) ── */}

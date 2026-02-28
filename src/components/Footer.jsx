@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import React, { useEffect, useState, useRef } from 'react'
 
 export default function Footer() {
+    const footerRef = useRef(null)
     const [time, setTime] = useState(new Date())
 
     useEffect(() => {
@@ -10,7 +10,7 @@ export default function Footer() {
     }, [])
 
     return (
-        <footer className="relative sticky top-0 md:top-[50vh] min-h-[50vh] w-full bg-[#F0EDE8] text-[#0A0A0A] rounded-t-[3rem] md:rounded-t-[4rem] overflow-hidden border-t border-black/5 flex flex-col pb-8 pt-12 md:pt-16">
+        <footer ref={footerRef} className="relative z-10 min-h-screen w-full bg-[#F0EDE8] text-[#0A0A0A] rounded-t-[3rem] md:rounded-t-[4rem] overflow-hidden border-t border-black/5 flex flex-col pb-8 pt-12 md:pt-16">
 
             {/* Background grain explicitly for footer */}
             <div className="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-overlay bg-[url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center grayscale" />

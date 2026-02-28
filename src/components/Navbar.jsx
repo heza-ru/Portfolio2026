@@ -55,10 +55,14 @@ export default function Navbar({ isLoaded }) {
     const tweenRef = useRef(null)
     const busyRef = useRef(false)  // prevent double-fire
 
-    /* Lock body scroll when menu is open */
+    /* Lock body scroll and signal menu state when open */
     useEffect(() => {
         document.body.style.overflow = isOpen ? 'hidden' : ''
-        return () => { document.body.style.overflow = '' }
+        document.body.classList.toggle('menu-open', isOpen)
+        return () => {
+            document.body.style.overflow = ''
+            document.body.classList.remove('menu-open')
+        }
     }, [isOpen])
 
     /* Rebuild grid on resize */

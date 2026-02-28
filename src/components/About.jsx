@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Spline from '@splinetool/react-spline'
 import PixelReveal from './PixelReveal'
+import ImageParallax from './ImageParallax'
 
 function WireframeFallback() {
     return (
@@ -44,7 +45,7 @@ export default function About() {
     return (
         <section
             ref={container}
-            className="relative sticky top-0 h-screen w-full bg-[#F0EDE8] text-[#0A0A0A] flex items-center justify-center overflow-hidden py-12"
+            className="relative h-screen w-full bg-[#F0EDE8] text-[#0A0A0A] flex items-center justify-center overflow-hidden py-12"
         >
             {/* Background Floating Elements — Layer 1 */}
             <motion.div
@@ -61,8 +62,9 @@ export default function About() {
                 <span className="font-drama italic text-[30vw] text-black opacity-[0.04] select-none leading-none">01</span>
             </motion.div>
 
-            {/* Layer 4: Spline canvas — wrapped in PixelReveal */}
+            {/* Layer 4: Spline canvas — wrapped in PixelReveal then ImageParallax */}
             <motion.div style={{ y: yLayer4 }} className="absolute z-0 right-0 top-1/2 -translate-y-1/2 w-full md:w-1/2 h-[80vh] pointer-events-auto">
+                <ImageParallax className="w-full h-full" intensity={6}>
                 {/*
           scrollReveal=true so it triggers when the About section scrolls into view.
           Additionally, we also call reveal() imperatively once Spline has loaded.
@@ -89,6 +91,7 @@ export default function About() {
                         style={{ transition: 'opacity 0.6s ease' }}
                     />
                 </PixelReveal>
+                </ImageParallax>
             </motion.div>
 
             {/* About Header */}

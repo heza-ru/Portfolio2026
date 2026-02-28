@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { ReactLenis } from '@studio-freight/react-lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -36,6 +36,8 @@ import ScrollProgressBar from './components/ScrollProgressBar'
 import Footer from './components/Footer'
 
 function App() {
+    const worksRef = useRef(null)
+
     return (
         <ReactLenis root>
             <div className="min-h-screen text-[#F0EDE8] bg-[#0A0A0A] font-body relative">
@@ -50,14 +52,23 @@ function App() {
                     <Hero isLoaded />
                     <Navbar isLoaded />
 
-                    <StackingSections>
+                    {/*
+                      * About + Grid stack via GSAP pin (pinSpacing:false).
+                      * nextSectionRef points to the Works wrapper so Grid's
+                      * pin releases — and Grid's stacking animation fires —
+                      * exactly when Works reaches the viewport top.
+                      * Works is outside StackingSections so its own
+                      * ScrollTrigger measures a clean, undisturbed layout.
+                      */}
+                    <StackingSections nextSectionRef={worksRef}>
                         <About />
                         <Grid />
-                        <Works />
-                        <Philosophy />
                     </StackingSections>
 
-                    <div className="h-[30vh] pointer-events-none" aria-hidden="true" />
+                    <div ref={worksRef}>
+                        <Works />
+                    </div>
+                    <Philosophy />
                     <Footer />
                 </main>
             </div>

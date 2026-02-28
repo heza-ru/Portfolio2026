@@ -48,6 +48,7 @@ export default function ScrollProgressBar() {
     return (
         <div
             aria-hidden="true"
+            className="scroll-progress-container"
             style={{
                 position: 'fixed',
                 /*

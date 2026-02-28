@@ -1,5 +1,6 @@
 import React, { useRef } from 'react'
 import { useScroll, useTransform, motion } from 'framer-motion'
+import ImageParallax from './ImageParallax'
 
 export default function Hero({ isLoaded }) {
     const container = useRef(null)
@@ -41,12 +42,14 @@ export default function Hero({ isLoaded }) {
                     className="relative z-[10] w-[82%] md:w-[44%] h-[62vh] md:h-[82vh]"
                     data-cursor="VIEW"
                 >
-                    <motion.div
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={isLoaded ? { opacity: 1, scale: 1 } : {}}
-                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-                        className="w-full h-full rounded-[32px] border border-white/5 bg-gradient-to-br from-[#151515] to-[#050505]"
-                    />
+                    <ImageParallax className="w-full h-full" intensity={10}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 1.05 }}
+                            animate={isLoaded ? { opacity: 1, scale: 1 } : {}}
+                            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+                            className="w-full h-full rounded-[32px] border border-white/5 bg-gradient-to-br from-[#151515] to-[#050505]"
+                        />
+                    </ImageParallax>
                 </motion.div>
 
                 {/* ── Front name: Haider — Layer 4 (in front of portrait) ── */}

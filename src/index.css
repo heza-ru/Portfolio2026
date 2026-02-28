@@ -32,9 +32,18 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Suppress hand/pointer cursor on all interactive elements —
+     the custom cursor handles all pointer feedback */
+  a, button, [role="button"], input, select, textarea, label,
+  summary, [tabindex] {
+    cursor: none;
+  }
+
   /* Restore cursor on touch/hover:none devices */
   @media (hover: none) {
-    body {
+    body,
+    a, button, [role="button"], input, select, textarea, label,
+    summary, [tabindex] {
       cursor: auto;
     }
   }
@@ -199,6 +208,11 @@
       transition: none;
       animation: none;
     }
+  }
+
+  /* Hide custom scrollbar while the nav menu is open */
+  body.menu-open .scroll-progress-container {
+    visibility: hidden;
   }
 
   /* ── Custom Cursor ── */

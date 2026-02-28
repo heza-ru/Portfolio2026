@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import PixelReveal from './PixelReveal'
+import ImageParallax from './ImageParallax'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -24,7 +25,25 @@ const projects = [
         category: 'Interactive Installation',
         image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2000&auto=format&fit=crop',
         description: 'Physical-to-digital bridge connecting movement tracking sensors with generative particle systems capable of rendering 1M+ points at 60fps.'
-    }
+    },
+    {
+        title: 'Void Protocol',
+        category: 'UI / UX Engineering',
+        image: 'https://images.unsplash.com/photo-1535223289429-462106a84af7?q=80&w=2000&auto=format&fit=crop',
+        description: 'A zero-UI operating system interface concept — every action triggered by intent, gesture, and context rather than explicit navigation. Built in React with custom state-machine choreography.'
+    },
+    {
+        title: 'Echo Chamber',
+        category: 'Generative Audio-Visual',
+        image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=2000&auto=format&fit=crop',
+        description: 'Real-time audio analysis pipeline feeding GLSL vertex shaders, translating frequency bands into organic topographic deformations at 120fps on consumer hardware.'
+    },
+    {
+        title: 'Dark Matter',
+        category: 'Brand Identity System',
+        image: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2000&auto=format&fit=crop',
+        description: 'End-to-end visual identity for a deep-tech AI lab — from motion principles and type hierarchy to a component library shipping across web, print, and spatial computing surfaces.'
+    },
 ]
 
 export default function Works() {
@@ -32,33 +51,51 @@ export default function Works() {
     const scrollTrackRef = useRef(null)
 
     React.useEffect(() => {
-        let ctx
-        // Delay to ensure StackingSections has set up first
-        const timeout = setTimeout(() => {
-            ctx = gsap.context(() => {
-                const track = scrollTrackRef.current
-                const panels = gsap.utils.toArray('.work-panel')
-                const scrollDistance = (panels.length - 1) * 100
+        const ctx = gsap.context(() => {
+            const track  = scrollTrackRef.current
+            const panels = gsap.utils.toArray('.work-panel')
 
-                gsap.to(track, {
-                    xPercent: -scrollDistance,
-                    ease: 'none',
-                    scrollTrigger: {
-                        trigger: container.current,
-                        start: 'top top',
-                        end: () => '+=' + (track.offsetWidth * 2.5), // Increased scroll distance for more time
-                        scrub: 1,
-                        snap: 1 / (panels.length - 1),
-                        // No pin here - let StackingSections handle it
-                    }
-                })
-            }, container)
-        }, 100)
+            // ─── Tune these two values independently ──────────────────────
+            //
+            // HORIZONTAL: how far the track moves (px).
+            //   1.0 = last panel lands exactly flush with the right viewport edge
+            //   0.9 = slight under-travel (last panel peeks in from the right)
+            //   1.1 = slight over-travel (last panel overshoots)
+            const HORIZONTAL_MULTIPLIER = 1.0
+            const horizontalTravel = () =>
+                (track.offsetWidth - window.innerWidth) * HORIZONTAL_MULTIPLIER
 
-        return () => {
-            clearTimeout(timeout)
-            ctx?.revert()
-        }
+            // VERTICAL: how much the user scrolls (px) while Works is pinned.
+            // Expressed as a fraction of the total track width — so it scales
+            // proportionally no matter how many panels or what screen size.
+            //   0.5 = next section starts at half the track width  (current)
+            //   1.0 = next section starts at full track width
+            //   0.25 = next section starts at quarter of track width (faster)
+            const VERTICAL_MULTIPLIER = 0.5
+            const verticalBudget = () => track.offsetWidth * VERTICAL_MULTIPLIER
+            // ──────────────────────────────────────────────────────────────
+
+            gsap.to(track, {
+                x: () => -horizontalTravel(),   // pixel translation — uses HORIZONTAL_MULTIPLIER
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: container.current,
+                    start: 'top top',
+                    end: verticalBudget,          // vertical scroll budget — uses VERTICAL_MULTIPLIER
+                    invalidateOnRefresh: true,     // recalc both on resize
+                    scrub: true,
+                    snap: {
+                        snapTo: 1 / (panels.length - 1),
+                        duration: { min: 0.1, max: 0.4 },
+                        ease: 'power1.inOut',
+                    },
+                    pin: true,
+                    pinSpacing: true,
+                },
+            })
+        }, container)
+
+        return () => ctx.revert()
     }, [])
 
     return (
@@ -70,8 +107,8 @@ export default function Works() {
                 </h2>
             </div>
 
-            {/* Horizontal Scrolling Track */}
-            <div ref={scrollTrackRef} className="flex h-full w-[300vw]">
+            {/* Horizontal Scrolling Track — width = panels.length × 100vw */}
+            <div ref={scrollTrackRef} className="flex h-full w-[600vw]">
                 {projects.map((project, i) => (
                     <WorkPanel key={i} project={project} index={i} />
                 ))}
@@ -91,7 +128,8 @@ const WorkPanel = ({ project, index }) => {
 
     return (
         <div className="work-panel w-screen h-screen flex items-center justify-center p-6 md:p-24 pb-12 pt-48 md:pt-48 group">
-            <div className="relative w-full h-full overflow-hidden rounded-xl md:rounded-3xl" data-cursor="VIEW WORK">
+            <ImageParallax className="relative w-full h-full" intensity={8}>
+            <div className="w-full h-full overflow-hidden rounded-xl md:rounded-3xl" data-cursor="VIEW WORK">
                 <div ref={panelInner} className="absolute inset-0 w-full h-full overflow-hidden">
 
                     {/* ── Pixel-reveal wraps the background image ── */}
@@ -131,6 +169,7 @@ const WorkPanel = ({ project, index }) => {
                     </div>
                 </div>
             </div>
+            </ImageParallax>
         </div>
     )
 }

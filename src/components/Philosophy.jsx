@@ -18,7 +18,7 @@ export default function Philosophy() {
     return (
         <section
             ref={container}
-            className="relative sticky top-0 h-screen w-full flex flex-col justify-center py-16 bg-[#0A0A0A] overflow-hidden"
+            className="relative sticky top-0 z-0 h-screen w-full flex flex-col justify-center py-16 bg-[#0A0A0A] overflow-hidden"
         >
             {/* Layer 0: Background Texture Parallax */}
             <motion.div
