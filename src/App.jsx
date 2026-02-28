@@ -1,5 +1,27 @@
 import React from 'react'
 import { ReactLenis } from '@studio-freight/react-lenis'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
+
+/*
+ * Central GSAP performance config (set once at app root):
+ *
+ * lagSmoothing(500, 33) — if a frame takes longer than 500 ms (e.g. tab
+ * was hidden), cap the delta to 33 ms instead of trying to "catch up".
+ * Prevents a jarring multi-second animation jump after returning to the tab.
+ *
+ * ScrollTrigger.config:
+ *   limitCallbacks   — skip redundant start/end callbacks when scrubbing fast
+ *   ignoreMobileResize — don't refresh all ScrollTriggers on the ~150 ms
+ *                        address-bar resize that fires on iOS scroll
+ */
+gsap.ticker.lagSmoothing(500, 33)
+ScrollTrigger.config({
+    limitCallbacks: true,
+    ignoreMobileResize: true,
+})
 import GlobalGrain from './components/GlobalGrain'
 import CustomCursor from './components/CustomCursor'
 import GlobalDigitalEffect from './components/GlobalDigitalEffect'

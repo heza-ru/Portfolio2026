@@ -1,37 +1,43 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 /*
- * Scroll progress bar — replaces the native scrollbar.
+ * Custom scroll progress bar — replaces the native scrollbar.
  *
- * Visual spec:
- *   • 80 px wide  (matches the old SVG path stroke width)
- *   • Fixed to the right side, offset inward so it lands in the
- *     gap between the "Contact" nav link and the "Menu" button
- *   • White fill with mix-blend-mode: difference → appears as a
- *     dark inversion on light sections, bright white on dark sections
- *   • Grows from top (0 %) to bottom (100 %) as the page is scrolled
+ * Performance (2026):
+ *   Before: animated `height` → triggers Paint every frame (C-Tier).
+ *   After:  `transform: scaleY()` with `transform-origin: top center`
+ *           → compositor-only update, no layout or paint (S-Tier).
+ *
+ * The inner div is always 100vh tall; scaleY shrinks it from the top down.
+ * Scroll progress is read via window.scrollY inside a requestAnimationFrame
+ * callback — no state updates, no React re-renders on every scroll tick.
  */
 export default function ScrollProgressBar() {
-    const [progress, setProgress] = useState(0)
+    const barRef = useRef(null)
     const rafRef = useRef(null)
 
     useEffect(() => {
-        const compute = () => {
+        const bar = barRef.current
+        if (!bar) return
+
+        const update = () => {
             const scrolled = window.scrollY
             const total =
                 document.documentElement.scrollHeight - window.innerHeight
-            setProgress(total > 0 ? (scrolled / total) * 100 : 0)
+            const scale = total > 0 ? scrolled / total : 0
+            // scaleY is compositor-only (S-Tier) — no layout, no paint
+            bar.style.transform = `scaleY(${scale})`
             rafRef.current = null
         }
 
         const onScroll = () => {
             if (!rafRef.current) {
-                rafRef.current = requestAnimationFrame(compute)
+                rafRef.current = requestAnimationFrame(update)
             }
         }
 
         window.addEventListener('scroll', onScroll, { passive: true })
-        compute() // seed on mount
+        update() // seed on mount
 
         return () => {
             window.removeEventListener('scroll', onScroll)
@@ -45,10 +51,9 @@ export default function ScrollProgressBar() {
             style={{
                 position: 'fixed',
                 /*
-                 * right: 196px lands the bar between the last nav link
-                 * ("Contact", ~300 px from right) and the Menu button
-                 * (~64 px right padding + ~90 px button = ~154 px from right).
-                 * Midpoint ≈ 227 px → 196 keeps it visually centred in that gap.
+                 * Positioned so the bar sits in the gap between the
+                 * "Contact" nav link (~300 px from right) and the
+                 * "Menu" button (~154 px from right). Midpoint ≈ 196 px.
                  */
                 right: '196px',
                 top: 0,
@@ -59,12 +64,21 @@ export default function ScrollProgressBar() {
                 mixBlendMode: 'difference',
             }}
         >
+            {/*
+             * Full-height fill element. scaleY(0..1) grows it top-to-bottom.
+             * will-change set here permanently — this single element stays on
+             * screen the entire session and animates constantly, so permanent
+             * layer promotion is justified.
+             */}
             <div
+                ref={barRef}
                 style={{
                     width: '100%',
-                    height: `${progress}%`,
+                    height: '100%',
                     background: 'white',
-                    willChange: 'height',
+                    transformOrigin: 'top center',
+                    transform: 'scaleY(0)',
+                    willChange: 'transform',
                 }}
             />
         </div>

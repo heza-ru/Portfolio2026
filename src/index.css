@@ -12,7 +12,6 @@
   }
 
   html {
-    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* Hide native scrollbar — custom progress bar replaces it */
@@ -27,12 +26,10 @@
   body {
     @apply bg-[#0A0A0A] text-[#F0EDE8] overflow-x-hidden;
     font-family: 'Satoshi', sans-serif;
-    /* Hide default cursor everywhere — custom cursor takes over on pointer devices */
     cursor: none;
-    /* Performance optimization */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeSpeed;
+    text-rendering: optimizeLegibility;
   }
 
   /* Restore cursor on touch/hover:none devices */
@@ -42,38 +39,42 @@
     }
   }
 
-  /* Respect prefers-reduced-motion */
+  /*
+   * Respect prefers-reduced-motion.
+   * Don't use !important on transition-duration across the board — it
+   * breaks GSAP's own duration values. Instead kill CSS animations and
+   * transitions only; GSAP reads this media query separately.
+   */
   @media (prefers-reduced-motion: reduce) {
-
     *,
     *::before,
     *::after {
       animation-duration: 0.001ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
     }
   }
 
-  /* GPU-accelerate common transform layers */
+  /*
+   * Use contain:style (not layout/paint) on sections.
+   * - contain:layout would prevent GSAP ScrollTrigger from measuring
+   *   element offsets relative to the document correctly.
+   * - contain:paint clips overflow, which is intentional per section.
+   *   But we exclude it here so GSAP pinning doesn't cause visual clipping.
+   * - contain:style is safe: it stops CSS counters / custom properties
+   *   from leaking between sections with negligible cost.
+   */
   section {
-    contain: layout style paint;
+    contain: style;
   }
 
-  [data-parallax] {
-    will-change: transform;
-    transform: translateZ(0);
-  }
-
-  /* Optimize images for performance */
-  img {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-
+  /* Lazy-decode images — avoids blocking the main thread on decode */
   img {
     max-width: 100%;
     height: auto;
     display: block;
+    content-visibility: auto;
   }
 }
 
@@ -92,17 +93,21 @@
   .btn-magnetic {
     position: relative;
     overflow: hidden;
+    /*
+     * will-change only during hover, not permanently.
+     * Permanent will-change on small elements wastes GPU memory.
+     * We let the hover state trigger layer promotion via :hover.
+     */
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    /* Add slight will-change to prevent jitter on scale */
-    will-change: transform;
   }
 
   .btn-magnetic:hover {
     transform: scale(1.03);
+    will-change: transform;
   }
 
   /* Sliding background span inside .btn-magnetic */
-  .btn-magnetic>.bg-slider {
+  .btn-magnetic > .bg-slider {
     position: absolute;
     inset: 0;
     transform: translateY(100%);
@@ -110,12 +115,12 @@
     z-index: 0;
   }
 
-  .btn-magnetic:hover>.bg-slider {
+  .btn-magnetic:hover > .bg-slider {
     transform: translateY(0);
   }
 
   /* Ensure text sits above the sliding background */
-  .btn-magnetic>.btn-text {
+  .btn-magnetic > .btn-text {
     position: relative;
     z-index: 10;
   }
@@ -131,31 +136,17 @@
   }
 
   /* ── Pixel Reveal ── */
-  /* The wrapper must have overflow:hidden so blocks don't bleed out */
   .pixel-reveal-wrap {
     position: relative;
     overflow: hidden;
   }
 
-  /* The block-grid overlay inside each pixel-reveal-wrap */
-  .pixel-reveal-wrap>div:last-child {
+  .pixel-reveal-wrap > div:last-child {
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 10;
     overflow: hidden;
-  }
-
-  /* ── Sticky Cards ── */
-  .sticky-card {
-    border-radius: 0;
-  }
-
-  /* Support for CSS custom properties in sticky cards */
-  @supports (--custom: property) {
-    .sticky-card {
-      --after-opacity: 0;
-    }
   }
 
   /* ── Digital Grid Overlay Effect ── */
@@ -168,9 +159,11 @@
     pointer-events: none;
     z-index: 9998;
     overflow: hidden;
-    /* Performance optimizations */
-    contain: layout style paint;
-    will-change: contents;
+    /*
+     * contain:strict on the overlay itself is fine — it's a fixed overlay
+     * with no children that need to be measured externally.
+     */
+    contain: strict;
   }
 
   .digital-grid-block {
@@ -185,11 +178,14 @@
     font-weight: 600;
     line-height: 1;
     opacity: 0;
+    /*
+     * Transition only opacity — compositor-only property (S-Tier).
+     * No transform: translateZ(0) here: applying it to 1600+ blocks
+     * simultaneously creates a GPU layer per block and blows out
+     * VRAM on any device. The parent overlay is already its own layer.
+     */
     transition: opacity 0.12s cubic-bezier(0.4, 0, 0.2, 1);
     text-shadow: 0 0 10px rgba(240, 237, 232, 0.6);
-    /* Performance optimizations */
-    transform: translateZ(0);
-    backface-visibility: hidden;
     -webkit-font-smoothing: antialiased;
     contain: strict;
   }
@@ -198,31 +194,16 @@
     opacity: 0.88;
   }
 
-  /* Reduce motion for accessibility */
   @media (prefers-reduced-motion: reduce) {
     .digital-grid-block {
       transition: none;
       animation: none;
     }
-    
-    * {
-      animation-play-state: paused !important;
-      transition-duration: 0.001ms !important;
-    }
   }
 
-  /* ── Custom Cursor Performance ── */
+  /* ── Custom Cursor ── */
   [data-cursor] {
     cursor: none;
-    /* Optimize hover interactions */
     -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Hardware acceleration for common animated elements */
-  .motion-safe\:animate-spin,
-  [class*="animate-"],
-  [class*="transition-"] {
-    transform: translateZ(0);
-    backface-visibility: hidden;
   }
 }

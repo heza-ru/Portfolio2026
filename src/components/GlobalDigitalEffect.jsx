@@ -50,7 +50,15 @@ export default function GlobalDigitalEffect() {
                     block.style.height = `${config.blockSize}px`
                     block.style.left = `${col * config.blockSize}px`
                     block.style.top = `${row * config.blockSize}px`
-                    block.style.willChange = 'opacity'
+                    /*
+                     * No will-change here. Applying it to every block
+                     * (~1600 elements on a 1440p screen) would create a
+                     * compositor layer per block and blow out GPU VRAM.
+                     * The parent .digital-grid-overlay already has
+                     * contain:strict, which is sufficient for performance.
+                     * Opacity transitions run cheaply as paint within
+                     * the parent's single layer.
+                     */
 
                     overlay.appendChild(block)
 
