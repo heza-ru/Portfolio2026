@@ -10,6 +10,7 @@ import Grid from './components/Grid'
 import Works from './components/Works'
 import Philosophy from './components/Philosophy'
 import StackingSections from './components/StackingSections'
+import ScrollProgressBar from './components/ScrollProgressBar'
 import Footer from './components/Footer'
 
 function App() {
@@ -20,15 +21,20 @@ function App() {
                 <CustomCursor />
                 <GlobalDigitalEffect />
 
+                {/* Fixed scroll progress bar — replaces native scrollbar */}
+                <ScrollProgressBar />
+
                 <main className="relative z-10">
                     <Hero isLoaded />
                     <Navbar isLoaded />
+
                     <StackingSections>
                         <About />
                         <Grid />
                         <Works />
                         <Philosophy />
                     </StackingSections>
+
                     <div className="h-[30vh] pointer-events-none" aria-hidden="true" />
                     <Footer />
                 </main>
