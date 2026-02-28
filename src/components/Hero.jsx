@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { useScroll, useTransform, motion } from 'framer-motion'
-import ImageParallax from './ImageParallax'
+import HeroModel from './HeroModel'
 
 export default function Hero({ isLoaded }) {
     const container = useRef(null)
@@ -36,20 +36,16 @@ export default function Hero({ isLoaded }) {
                     </motion.h1>
                 </motion.div>
 
-                {/* ── Layer 0: Central panel (no image) ── */}
+                {/* ── Layer 0: Full-screen 3D hero model ── */}
                 <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={isLoaded ? { opacity: 1 } : {}}
+                    transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                     style={{ y: yBg }}
-                    className="relative z-[10] w-[82%] md:w-[44%] h-[62vh] md:h-[82vh]"
+                    className="absolute inset-0 z-[1]"
                     data-cursor="VIEW"
                 >
-                    <ImageParallax className="w-full h-full" intensity={10}>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 1.05 }}
-                            animate={isLoaded ? { opacity: 1, scale: 1 } : {}}
-                            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-                            className="w-full h-full rounded-[32px] border border-white/5 bg-gradient-to-br from-[#151515] to-[#050505]"
-                        />
-                    </ImageParallax>
+                    <HeroModel />
                 </motion.div>
 
                 {/* ── Front name: Haider — Layer 4 (in front of portrait) ── */}

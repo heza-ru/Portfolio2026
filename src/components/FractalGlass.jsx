@@ -1,200 +1,167 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import * as THREE from 'three'
 
-/**
- * FractalGlass — lenticular glass background for the Hero section.
- *
- * Technique (from Pablo Stanley's CodePen gOJVaeJ):
- *  • The background image is sliced into N vertical "cell" divs.
- *  • Alternating cells are flipped with scaleX(-1), producing the
- *    mirrored-strip lenticular look.
- *  • Cell widths narrow toward the centre, simulating a lens curve.
- *  • An SVG feTurbulence → feDisplacementMap filter warps the whole
- *    stack, giving organic glass distortion.
- *  • On mouse move, each cell's backgroundPositionX shifts at a slightly
- *    different rate — this IS the lenticular parallax (angle-of-view change).
- *  • The wrapper also translates subtly for an added depth cue.
- *  • turbulence baseFrequency breathes slowly over time.
- */
+const vertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
 
-// ── Background image ─────────────────────────────────────────────────────────
-// A jewel-toned gradient abstract. Works great with screen blend mode on
-// the near-black hero, making dark areas vanish and colours glow.
-const BG =
-    'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=2000&auto=format&fit=crop'
+// Renders semi-transparent glass stripes — no image texture.
+// The fractal distortion + mouse parallax make the stripes shift and refract,
+// creating a glass panel illusion over whatever sits beneath this canvas.
+const fragmentShader = `
+  uniform vec2 uMouse;
+  uniform float uParallaxStrength;
+  uniform float uDistortionMultiplier;
+  uniform float uGlassStrength;
+  uniform float ustripesFrequency;
+  uniform float uglassSmoothness;
+  uniform float uEdgePadding;
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const STEPS = 40      // number of lenticular strips
-// Asymmetric baseFrequency: higher X creates tight vertical seams (not blobs),
-// lower Y keeps distortion elongated along the strip direction.
-const BASE_FREQ_X = 0.04   // X axis — controls strip boundary tightness
-const BASE_FREQ_Y = 0.008  // Y axis — keeps distortion tall/elongated
-const OCTAVES = 1       // 1 = clean single layer; more = busier/melted
-const DISP_SCALE = 12      // subtle displacement — too high = melted look
-const MOUSE_RANGE = 14      // max background-position shift (%) from mouse
-const WRAPPER_DRIFT = 0.18    // how much the whole wrapper shifts on mouse X
+  varying vec2 vUv;
 
-export default function FractalGlass() {
-    const wrapperRef = useRef(null)
-    const turbRef = useRef(null)
-    const mouse = useRef({ x: 0.5, y: 0.5 })
-    const targetMouse = useRef({ x: 0.5, y: 0.5 })
-    const rafRef = useRef(null)
+  float displacement(float x, float num_stripes, float strength) {
+    float modulus = 1.0 / num_stripes;
+    return mod(x, modulus) * strength;
+  }
 
-    // ── Build cells (once on mount) ────────────────────────────────────────────
-    function buildCells(wrapper) {
-        wrapper.innerHTML = ''
-        for (let i = 0; i < STEPS; i++) {
-            const flip = i % 2 === 0 ? 'scaleX(1)' : 'scaleX(-1)'
-            const midDist = Math.abs(i - STEPS / 2) / (STEPS / 2)
-            const cellWidth = (100 / STEPS) * (1 - midDist * 0.2)
-
-            const cell = document.createElement('div')
-            cell.style.cssText = `
-        background-image: url(${BG});
-        background-position: ${(i / STEPS) * 100}% 50%;
-        background-size: cover;
-        transform: ${flip};
-        width: ${cellWidth}%;
-        flex-shrink: 0;
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-      `
-            // shimmer edge highlight
-            const shimmer = document.createElement('div')
-            shimmer.style.cssText = `
-        position:absolute; top:0; right:0;
-        width:100%; height:100%;
-        background:linear-gradient(
-          90deg,
-          rgba(255,255,255,0) 72%,
-          rgba(255,255,255,0.07) 98%,
-          rgba(255,255,255,0.32) 100%
-        );
-        pointer-events:none;
-      `
-            cell.appendChild(shimmer)
-            wrapper.appendChild(cell)
-        }
+  float fractalGlass(float x) {
+    float d = 0.0;
+    for (int i = -5; i <= 5; i++) {
+      d += displacement(x + float(i) * uglassSmoothness, ustripesFrequency, uGlassStrength);
     }
+    return x + d / 11.0;
+  }
+
+  float smoothEdge(float x, float padding) {
+    if (x < padding)         return smoothstep(0.0, padding, x);
+    if (x > 1.0 - padding)   return smoothstep(1.0, 1.0 - padding, x);
+    return 1.0;
+  }
+
+  void main() {
+    float originalX  = vUv.x;
+    float edgeFactor = smoothEdge(originalX, uEdgePadding);
+
+    float distortedX      = fractalGlass(originalX);
+    float distortionFactor = (distortedX - originalX) * edgeFactor;
+
+    float parallaxDir = -sign(0.5 - uMouse.x);
+    float parallaxX   = parallaxDir
+                        * abs(uMouse.x - 0.5)
+                        * uParallaxStrength
+                        * (1.0 + abs(distortionFactor) * uDistortionMultiplier)
+                        * edgeFactor;
+
+    float sampleX = mix(originalX, distortedX, edgeFactor) + parallaxX;
+
+    // Sharp boundary line between each glass panel
+    float stripe     = abs(sin(sampleX * ustripesFrequency * 3.14159265));
+    float lineAlpha  = pow(stripe, 18.0) * 0.7 * edgeFactor;   // very tight line
+
+    // Very faint fill inside each panel
+    float glow       = (1.0 - pow(stripe, 2.0)) * 0.04 * edgeFactor;
+
+    float alpha      = lineAlpha + glow;
+
+    // Slight blue-white tint — classic frosted glass
+    vec3 color = mix(vec3(0.75, 0.88, 1.0), vec3(1.0), stripe * 0.5);
+
+    gl_FragColor = vec4(color, alpha);
+  }
+`
+
+const config = {
+    lerpFactor:            0.035,
+    parallaxStrength:      0.12,
+    distortionMultiplier:  10.0,
+    glassStrength:         2.0,
+    glassSmoothness:       0.0001,
+    stripesFrequency:      6.0,   // few wide panels, not dense lines
+    edgePadding:           0.08,
+}
+
+export default function FractalGlass({ className = '' }) {
+    const containerRef = useRef(null)
 
     useEffect(() => {
-        const wrapper = wrapperRef.current
-        if (!wrapper) return
-        buildCells(wrapper)
+        const container = containerRef.current
+        if (!container) return
 
-        // ── Mouse tracking ────────────────────────────────────────────────────
-        function onMouseMove(e) {
-            // normalise to [0, 1] relative to the viewport
-            targetMouse.current.x = e.clientX / window.innerWidth
-            targetMouse.current.y = e.clientY / window.innerHeight
+        const w = container.clientWidth
+        const h = container.clientHeight
+
+        const scene    = new THREE.Scene()
+        const camera   = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+        renderer.setClearColor(0x000000, 0)   // fully transparent clear
+        renderer.setSize(w, h)
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        container.appendChild(renderer.domElement)
+
+        const mouse       = { x: 0.5, y: 0.5 }
+        const targetMouse = { x: 0.5, y: 0.5 }
+        const lerp        = (a, b, t) => a + (b - a) * t
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uMouse:                { value: new THREE.Vector2(0.5, 0.5) },
+                uParallaxStrength:     { value: config.parallaxStrength },
+                uDistortionMultiplier: { value: config.distortionMultiplier },
+                uGlassStrength:        { value: config.glassStrength },
+                ustripesFrequency:     { value: config.stripesFrequency },
+                uglassSmoothness:      { value: config.glassSmoothness },
+                uEdgePadding:          { value: config.edgePadding },
+            },
+            vertexShader,
+            fragmentShader,
+            transparent: true,
+            depthWrite:  false,
+        })
+
+        scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material))
+
+        const onMouseMove = (e) => {
+            targetMouse.x = e.clientX / window.innerWidth
+            targetMouse.y = 1.0 - e.clientY / window.innerHeight
         }
-        window.addEventListener('mousemove', onMouseMove, { passive: true })
+        window.addEventListener('mousemove', onMouseMove)
 
-        // ── Render loop ────────────────────────────────────────────────────────
-        let t = 0
-        function tick() {
-            t += 0.004
-
-            // Smooth mouse lerp
-            const m = mouse.current
-            const tm = targetMouse.current
-            m.x += (tm.x - m.x) * 0.055
-            m.y += (tm.y - m.y) * 0.055
-
-            // Animate turbulence seed for subtle motion WITHOUT changing frequency
-            // (changing baseFrequency was making the pattern grow/shrink → melted look)
-            if (turbRef.current) {
-                // Very gently oscillate only the Y frequency for a breathing feel
-                const bfY = BASE_FREQ_Y + Math.sin(t * 0.3) * 0.001
-                turbRef.current.setAttribute('baseFrequency', `${BASE_FREQ_X} ${bfY.toFixed(5)}`)
-            }
-
-            // ── Per-cell lenticular angle shift ─────────────────────────────────
-            // Shifting backgroundPositionX replicates looking at a lenticular card
-            // from different horizontal angles — the defining parallax of the effect.
-            const cells = wrapper.children
-            const shiftX = (m.x - 0.5) * MOUSE_RANGE   // –range..+range
-            const shiftY = (m.y - 0.5) * (MOUSE_RANGE * 0.4)
-
-            for (let i = 0; i < cells.length; i++) {
-                const base = (i / STEPS) * 100
-                // Each strip uses a slightly different rate for the depth illusion
-                const rate = 1 + (i / STEPS) * 0.35
-                cells[i].style.backgroundPositionX = `${base - shiftX * rate}%`
-                cells[i].style.backgroundPositionY = `${50 + shiftY}%`
-            }
-
-            // ── Whole-wrapper drift (secondary parallax) ─────────────────────────
-            const driftX = shiftX * WRAPPER_DRIFT
-            const driftY = shiftY * 0.5
-            wrapper.style.transform = `translateX(calc(-6% + ${driftX}px)) translateY(${driftY}px)`
-
-            rafRef.current = requestAnimationFrame(tick)
+        const onResize = () => {
+            renderer.setSize(container.clientWidth, container.clientHeight)
         }
-        rafRef.current = requestAnimationFrame(tick)
+        window.addEventListener('resize', onResize)
+
+        let rafId
+        const animate = () => {
+            rafId = requestAnimationFrame(animate)
+            mouse.x = lerp(mouse.x, targetMouse.x, config.lerpFactor)
+            mouse.y = lerp(mouse.y, targetMouse.y, config.lerpFactor)
+            material.uniforms.uMouse.value.set(mouse.x, mouse.y)
+            renderer.render(scene, camera)
+        }
+        animate()
 
         return () => {
-            cancelAnimationFrame(rafRef.current)
+            cancelAnimationFrame(rafId)
             window.removeEventListener('mousemove', onMouseMove)
+            window.removeEventListener('resize', onResize)
+            renderer.dispose()
+            material.dispose()
+            if (renderer.domElement.parentNode === container) {
+                container.removeChild(renderer.domElement)
+            }
         }
     }, [])
 
     return (
         <div
-            aria-hidden="true"
-            style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 2,
-                pointerEvents: 'none',
-                overflow: 'hidden',
-                // screen blend: dark pixels vanish, colours glow against #0A0A0A
-                mixBlendMode: 'screen',
-                opacity: 0.82,
-            }}
-        >
-            {/* ── SVG displacement filter ──────────────────────────────────────── */}
-            <svg
-                style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
-                aria-hidden="true"
-            >
-                <defs>
-                    <filter id="fractalHeroFilter" x="-10%" y="-10%" width="120%" height="120%">
-                        <feTurbulence
-                            ref={turbRef}
-                            type="turbulence"
-                            baseFrequency={`${BASE_FREQ_X} ${BASE_FREQ_Y}`}
-                            numOctaves={OCTAVES}
-                            seed="7"
-                            result="noise"
-                        />
-                        <feDisplacementMap
-                            in="SourceGraphic"
-                            in2="noise"
-                            scale={DISP_SCALE}
-                            xChannelSelector="R"
-                            yChannelSelector="G"
-                        />
-                    </filter>
-                </defs>
-            </svg>
-
-            {/* ── Lenticular strip wrapper ─────────────────────────────────────── */}
-            <div
-                ref={wrapperRef}
-                style={{
-                    display: 'flex',
-                    alignItems: 'stretch',
-                    width: '112%',
-                    height: '100%',
-                    position: 'absolute',
-                    top: 0,
-                    left: '-6%',
-                    filter: 'url(#fractalHeroFilter)',
-                    willChange: 'transform',
-                }}
-            />
-        </div>
+            ref={containerRef}
+            className={`w-full h-full ${className}`}
+            style={{ overflow: 'hidden' }}
+        />
     )
 }
