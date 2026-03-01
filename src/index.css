@@ -183,7 +183,7 @@
     background-color: #0A0A0A;
     color: #F0EDE8;
     font-family: 'Courier New', 'Courier', monospace;
-    font-size: 19px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1;
     opacity: 0;
@@ -219,5 +219,29 @@
   [data-cursor] {
     cursor: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── About section: CODE (7) clip-path text reveal ───────────────
+   * Base text is dim (low opacity). A ::before pseudo-element mirrors
+   * the text in full brightness and is clipped from the bottom upward
+   * as the section scrolls into view — revealing bright text like a
+   * curtain lifting from the bottom.
+   */
+  .about-animate-text {
+    position: relative;
+    color: rgba(240, 237, 232, 0.18);
+    --about-clip: 100%;
+  }
+
+  .about-animate-text::before {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    color: #F0EDE8;
+    clip-path: inset(0 0 var(--about-clip) 0);
+    will-change: clip-path;
+    pointer-events: none;
   }
 }

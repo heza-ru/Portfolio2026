@@ -97,8 +97,8 @@ export default function CustomCursor() {
                 flex items-center justify-center -translate-x-1/2 -translate-y-1/2
                 transition-[width,height,border-radius] duration-300 ease-out origin-center
                 ${isHovering && hoverText
-                    ? 'w-[120px] h-[40px] bg-white rounded-sm'
-                    : 'w-[28px]  h-[28px]  bg-white rounded-sm'
+                    ? 'w-[110px] h-[38px] bg-white rounded-sm'
+                    : 'w-[18px]  h-[18px]  bg-white rounded-sm'
                 }`}
             style={{
                 willChange: 'transform',
@@ -106,7 +106,7 @@ export default function CustomCursor() {
             }}
         >
             {isHovering && hoverText && (
-                <span className="text-[10px] text-black font-mono leading-none tracking-wider
+                <span className="text-[13px] text-black font-mono leading-none tracking-wider
                                  opacity-100 mix-blend-normal pointer-events-none uppercase">
                     {hoverText}
                 </span>

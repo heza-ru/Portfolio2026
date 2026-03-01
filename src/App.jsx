@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import { ReactLenis, useLenis } from '@studio-freight/react-lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -34,27 +34,30 @@ import Philosophy from './components/Philosophy'
 import StackingSections from './components/StackingSections'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import Footer from './components/Footer'
+import Preloader from './components/Preloader'
 
 function App() {
-    const worksRef = useRef(null)
+    const worksRef       = useRef(null)
+    const [loaded, setLoaded] = useState(false)
 
-    // Bridge Lenis smooth-scroll position into GSAP ScrollTrigger so pin/scrub
-    // animations fire correctly on every frame — critical for mobile touch scroll.
     useLenis(ScrollTrigger.update)
 
     return (
+        <>
+            {/* Preloader sits outside Lenis so scroll is locked during the animation */}
+            {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
+
         <ReactLenis root>
             <div className="min-h-screen text-[#F0EDE8] bg-[#0A0A0A] font-body relative">
                 <GlobalGrain />
                 <CustomCursor />
                 <GlobalDigitalEffect />
 
-                {/* Fixed scroll progress bar — replaces native scrollbar */}
                 <ScrollProgressBar />
 
                 <main className="relative z-10">
-                    <Hero isLoaded />
-                    <Navbar isLoaded />
+                    <Hero isLoaded={loaded} />
+                    <Navbar isLoaded={loaded} />
 
                     {/*
                       * About + Grid stack via GSAP pin (pinSpacing:false).
@@ -77,6 +80,7 @@ function App() {
                 </main>
             </div>
         </ReactLenis>
+        </>
     )
 }
 

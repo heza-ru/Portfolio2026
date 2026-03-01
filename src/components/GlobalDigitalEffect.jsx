@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 
 const config = {
     symbols: ['O', 'X', '*', '>', '$', 'W', '#', '@', '+', '=', '▓', '░', '▒', '◆', '●'],
-    blockSize: 28,
-    detectionRadius: 70,
+    blockSize: 18,
+    detectionRadius: 55,
     clusterSize: 8,
     blockLifetime: 350,
     emptyRatio: 0.25,

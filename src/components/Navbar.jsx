@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Menu } from 'lucide-react'
 import gsap from 'gsap'
+import HoverChars from './HoverChars'
 
 const navLinks = [
     { name: 'Index', url: '#hero', img: 'https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=800&auto=format&fit=crop' },
@@ -173,9 +174,9 @@ export default function Navbar({ isLoaded }) {
                         <a
                             key={link.name}
                             href={link.url}
-                            className="link-lift font-mono font-bold text-sm uppercase tracking-widest opacity-90 hover:opacity-100 transition-all duration-200"
+                            className="font-mono font-bold text-sm uppercase tracking-widest opacity-90 hover:opacity-100 transition-opacity duration-200"
                         >
-                            {link.name}
+                            <HoverChars stagger={0.02} duration={0.4}>{link.name}</HoverChars>
                         </a>
                     ))}
                 </div>
@@ -254,7 +255,7 @@ export default function Navbar({ isLoaded }) {
                                     onClick={closeMenu}
                                     className="block font-heading uppercase text-[clamp(3rem,8vw,7rem)] leading-[0.9] hover:text-accent transition-colors duration-300"
                                 >
-                                    {link.name}
+                                    <HoverChars stagger={0.04} duration={0.55}>{link.name}</HoverChars>
                                 </a>
                             </motion.div>
                         ))}
@@ -267,7 +268,9 @@ export default function Navbar({ isLoaded }) {
                             className="mt-12 flex gap-6 font-mono text-xs uppercase tracking-widest opacity-40"
                         >
                             {['GitHub', 'LinkedIn', 'Email'].map(s => (
-                                <a key={s} href="#" className="link-lift hover:opacity-100 hover:text-accent transition-all">{s}</a>
+                                <a key={s} href="#" className="hover:opacity-100 hover:text-accent transition-opacity">
+                                    <HoverChars stagger={0.025} duration={0.4}>{s}</HoverChars>
+                                </a>
                             ))}
                         </motion.div>
                     </div>

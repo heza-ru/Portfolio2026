@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import HoverChars from './HoverChars'
 
 export default function Footer() {
     const footerRef = useRef(null)
@@ -32,8 +33,8 @@ export default function Footer() {
                     <div className="md:col-span-3 flex flex-col gap-3 font-mono text-sm tracking-widest uppercase opacity-80">
                         <span className="text-black/40 mb-2 border-b border-black/10 pb-2 w-fit">Navigation</span>
                         {['Index', 'About', 'Works', 'Philosophy'].map(link => (
-                            <a key={link} href="#" className="link-lift inline-block hover:text-accent transition-colors w-fit tracking-widest">
-                                {link}
+                            <a key={link} href="#" className="inline-block hover:text-accent transition-colors w-fit tracking-widest">
+                                <HoverChars stagger={0.025} duration={0.4}>{link}</HoverChars>
                             </a>
                         ))}
                     </div>
@@ -42,8 +43,8 @@ export default function Footer() {
                     <div className="md:col-span-3 flex flex-col gap-3 font-mono text-sm tracking-widest uppercase opacity-80">
                         <span className="text-black/40 mb-2 border-b border-black/10 pb-2 w-fit">Connect</span>
                         {['GitHub', 'LinkedIn', 'Twitter', 'Email'].map(link => (
-                            <a key={link} href="#" className="link-lift inline-block hover:text-accent transition-colors w-fit tracking-widest">
-                                {link}
+                            <a key={link} href="#" className="inline-block hover:text-accent transition-colors w-fit tracking-widest">
+                                <HoverChars stagger={0.025} duration={0.4}>{link}</HoverChars>
                             </a>
                         ))}
                     </div>

@@ -1,174 +1,126 @@
-import React, { useRef, useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import Spline from '@splinetool/react-spline'
-import PixelReveal from './PixelReveal'
-import ImageParallax from './ImageParallax'
+import { useRef, useEffect } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-function WireframeFallback() {
-    return (
-        <div className="w-full h-full flex items-center justify-center opacity-20 border border-black/20 rounded-full animate-[spin_20s_linear_infinite]">
-            <div className="w-3/4 h-3/4 border border-black/40 flex items-center justify-center rotate-45">
-                <div className="w-1/2 h-1/2 border border-black/60 -rotate-45"></div>
-            </div>
-        </div>
-    )
-}
+gsap.registerPlugin(ScrollTrigger)
+
+const STATEMENT =
+    'Architecting digital experiences where deep cinematic aesthetics meet rigorous technical execution.'
+
+const ROWS = [
+    { label: 'Digital Design',         dir: 1  },
+    { label: 'Frontend Engineering',   dir: -1 },
+    { label: 'Creative Direction',     dir: 1  },
+]
 
 export default function About() {
-    const container = useRef(null)
-    const pixelRef = useRef(null)   // imperative handle for the Spline pixel-reveal
-    const [splineLoaded, setSplineLoaded] = useState(false)
+    const sectionRef = useRef(null)
+    const textRef    = useRef(null)
+    const row0       = useRef(null)
+    const row1       = useRef(null)
+    const row2       = useRef(null)
+    const rowRefs    = [row0, row1, row2]
 
-    const { scrollYProgress } = useScroll({
-        target: container,
-        offset: ['start end', 'end start']
-    })
+    useEffect(() => {
+        const section = sectionRef.current
+        const text    = textRef.current
+        if (!section || !text) return
 
-    // Layer 4 (Fastest parallax for 3D element + ghost numeral)
-    const yLayer4 = useTransform(scrollYProgress, [0, 1], ['-20%', '20%'])
+        // Stamp the text content onto data-text so ::before can mirror it
+        text.setAttribute('data-text', text.textContent.trim())
 
-    // Layer 3 (Text element parallax)
-    const yText = useTransform(scrollYProgress, [0, 1], ['5%', '-5%'])
+        const ctx = gsap.context(() => {
 
-    // Layer 1 (Slow floating elements)
-    const yLayer1 = useTransform(scrollYProgress, [0, 1], ['10%', '-10%'])
+            /* ── 1. Clip-path text reveal ─────────────────────────────────
+             * As the section scrolls from 80 % to 20 % of the viewport the
+             * bright ::before overlay sweeps from fully-hidden (100%) to
+             * fully-revealed (0%), matching the CODE 7 scrub effect exactly.
+             */
+            ScrollTrigger.create({
+                trigger: text,
+                start:   'top 85%',
+                end:     'bottom 25%',
+                scrub:   1,
+                onUpdate(self) {
+                    const clip = Math.max(0, 100 - self.progress * 100)
+                    text.style.setProperty('--about-clip', `${clip}%`)
+                },
+            })
 
-    const statement = 'Architecting digital experiences where deep cinematic aesthetics meet rigorous technical execution.'
-    const words = statement.split(' ')
+            /* ── 2. Service rows — slide in from alternating sides ────────
+             * As the section enters (bottom → 30 % from top) each row
+             * lerps from ±80 % translateX back to 0 %, matching the CODE 7
+             * services-header entrance scroll trigger.
+             */
+            const rowEls = rowRefs.map(r => r.current).filter(Boolean)
+            gsap.set(rowEls[0], { x:  '80%' })
+            gsap.set(rowEls[1], { x: '-80%' })
+            gsap.set(rowEls[2], { x:  '80%' })
 
-    /* When Spline loads → trigger the pixel reveal imperatively */
-    const handleSplineLoad = () => {
-        setSplineLoaded(true)
-        pixelRef.current?.reveal()
-    }
+            ScrollTrigger.create({
+                trigger: section,
+                start:   'top bottom',
+                end:     'top 20%',
+                scrub:   1,
+                onUpdate(self) {
+                    const p = self.progress
+                    gsap.set(rowEls[0], { x: `${ 80 - p * 80}%` })
+                    gsap.set(rowEls[1], { x: `${-80 + p * 80}%` })
+                    gsap.set(rowEls[2], { x: `${ 80 - p * 80}%` })
+                },
+            })
+
+        }, section)
+
+        return () => ctx.revert()
+    }, [])
 
     return (
         <section
-            ref={container}
-            className="relative h-screen w-full bg-[#F0EDE8] text-[#0A0A0A] flex items-center justify-center overflow-hidden py-12"
+            id="about"
+            ref={sectionRef}
+            className="relative h-screen w-full bg-[#0A0A0A] text-[#F0EDE8] flex flex-col justify-between overflow-hidden py-10 px-6 md:px-16"
         >
-            {/* Background Floating Elements — Layer 1 */}
-            <motion.div
-                style={{ y: yLayer1 }}
-                className="absolute left-[10%] top-[20%] w-64 h-64 border border-black/10 rounded-full pointer-events-none"
-            />
-            <motion.div
-                style={{ y: yLayer1 }}
-                className="absolute right-[20%] bottom-[10%] w-32 h-32 border border-accent/40 rotate-45 pointer-events-none"
-            />
-
-            {/* Layer 4: Ghost Numeral */}
-            <motion.div style={{ y: yLayer4 }} className="absolute z-0 inset-0 pointer-events-none flex items-center justify-end md:pr-[10%]">
-                <span className="font-drama italic text-[30vw] text-black opacity-[0.04] select-none leading-none">01</span>
-            </motion.div>
-
-            {/* Layer 4: Spline canvas — wrapped in PixelReveal then ImageParallax */}
-            <motion.div style={{ y: yLayer4 }} className="absolute z-0 right-0 top-1/2 -translate-y-1/2 w-full md:w-1/2 h-[80vh] pointer-events-auto">
-                <ImageParallax className="w-full h-full" intensity={6}>
-                {/*
-          scrollReveal=true so it triggers when the About section scrolls into view.
-          Additionally, we also call reveal() imperatively once Spline has loaded.
-          The ref exposes { reveal, cover }.
-          Color is cream (#F0EDE8) to match the About section background.
-        */}
-                <PixelReveal
-                    ref={pixelRef}
-                    scrollReveal={true}
-                    startCovered={true}
-                    duration={1.1}
-                    blockDuration={0.05}
-                    delay={0.2}
-                    color="#F0EDE8"
-                    style={{ width: '100%', height: '100%' }}
-                    className="about-spline-reveal"
-                >
-                    {/* Override block color to match cream bg so reveal feels natural */}
-                    {!splineLoaded && <WireframeFallback />}
-                    <Spline
-                        scene="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode"
-                        onLoad={handleSplineLoad}
-                        className={splineLoaded ? 'opacity-100' : 'opacity-0'}
-                        style={{ transition: 'opacity 0.6s ease' }}
-                    />
-                </PixelReveal>
-                </ImageParallax>
-            </motion.div>
-
-            {/* About Header */}
-            <div className="absolute top-24 left-6 md:left-20 z-50 text-[#0A0A0A] pointer-events-none">
-                <motion.h2
-                    initial={{ y: 50, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true, margin: '-10%' }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="font-heading text-[clamp(2.5rem,5vw,5rem)] leading-none uppercase tracking-tight"
-                >
-                    About<br />Me
-                </motion.h2>
+            {/* ── Top metadata bar ─────────────────────────────────────── */}
+            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.25em] opacity-40">
+                <span>01 / About</span>
+                <span>Mohammad Haider — Available for Work</span>
             </div>
 
-            {/* Layer 3: Typography Content */}
-            <motion.div
-                style={{ y: yText }}
-                className="relative z-10 container mx-auto px-6 md:px-20 grid grid-cols-1 md:grid-cols-12 gap-12 pointer-events-none"
-            >
-                <div className="md:col-span-8 flex flex-col gap-16 pointer-events-auto">
+            {/* ── Clip-path statement text ──────────────────────────────── */}
+            <div className="flex-1 flex items-center">
+                <h2
+                    ref={textRef}
+                    className="about-animate-text font-body text-[clamp(1.6rem,3.8vw,4rem)] leading-[1.15] tracking-tight w-full max-w-5xl"
+                >
+                    {STATEMENT}
+                </h2>
+            </div>
 
-                    {/* Circling SVG Text Label */}
-                    <div className="relative w-32 h-32 animate-[spin_12s_linear_infinite]" data-cursor="READ">
-                        <svg viewBox="0 0 100 100" className="w-full h-full text-black/40">
-                            <path id="circlePath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
-                            <text className="font-mono text-[9px] uppercase tracking-widest fill-current">
-                                <textPath href="#circlePath" startOffset="0%">
-                                    Available for Work — Creative Developer — 2026 —
-                                </textPath>
-                            </text>
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="w-1 h-1 bg-accent rounded-full" />
-                        </div>
-                    </div>
+            {/* ── Divider ───────────────────────────────────────────────── */}
+            <div className="w-full h-px bg-white/10 mb-4" />
 
-                    {/* Word Cascade Statement */}
-                    <h2 className="font-body text-[clamp(2rem,4vw,4rem)] leading-[1.1] text-[#0A0A0A] max-w-4xl" data-cursor="READ">
-                        {words.map((word, i) => (
-                            <span key={i} className="inline-block mr-[0.25em] relative overflow-hidden pb-2 pointer-events-auto">
-                                <motion.span
-                                    initial={{ y: '100%', opacity: 0 }}
-                                    whileInView={{ y: '0%', opacity: 1 }}
-                                    viewport={{ once: true, margin: '-10%' }}
-                                    transition={{ duration: 0.6, delay: i * 0.04, ease: [0.76, 0, 0.24, 1] }}
-                                    className="inline-block"
-                                >
-                                    {word === 'cinematic' || word === 'rigorous' ? (
-                                        <span className="relative inline-block text-accent">
-                                            {word}
-                                            <motion.span
-                                                initial={{ scaleX: 0 }}
-                                                whileInView={{ scaleX: 1 }}
-                                                viewport={{ once: true }}
-                                                transition={{ duration: 0.8, delay: 0.4 }}
-                                                className="absolute left-0 bottom-1 w-full h-[2px] bg-accent origin-left"
-                                            />
-                                        </span>
-                                    ) : word}
-                                </motion.span>
-                            </span>
-                        ))}
-                    </h2>
-
-                    {/* Detailed text */}
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8, delay: 0.4 }}
-                        className="font-mono text-sm opacity-80 max-w-md leading-relaxed pointer-events-auto"
+            {/* ── Service rows ─────────────────────────────────────────── */}
+            <div className="flex flex-col overflow-hidden">
+                {ROWS.map(({ label }, i) => (
+                    <div
+                        key={label}
+                        ref={rowRefs[i]}
+                        className="will-change-transform border-t border-white/10 last:border-b py-2 md:py-3"
+                        style={{ overflow: 'hidden' }}
                     >
-                        Not interested in building digital brochures. Every interaction should feel intentional, every transition breathless. Bridging the gap between conceptual editorial design and highly-performant frontend architecture.
-                    </motion.p>
-                </div>
-            </motion.div>
+                        <span className="font-heading uppercase text-[clamp(2rem,5.5vw,5.5rem)] leading-none tracking-tight opacity-90 whitespace-nowrap block">
+                            {label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Bottom metadata ───────────────────────────────────────── */}
+            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] opacity-30 mt-4">
+                <span>Portfolio 2026</span>
+                <span>Riyadh, KSA</span>
+            </div>
         </section>
     )
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 
 export default function HeroModel({ className = '' }) {
     const containerRef = useRef(null)
@@ -22,39 +21,19 @@ export default function HeroModel({ className = '' }) {
         renderer.setSize(w, h)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.outputColorSpace    = THREE.SRGBColorSpace
-        renderer.toneMapping         = THREE.ACESFilmicToneMapping
-        renderer.toneMappingExposure = 1.2
-        renderer.shadowMap.enabled   = true
-        renderer.shadowMap.type      = THREE.PCFSoftShadowMap
+        renderer.shadowMap.enabled = true
+        renderer.shadowMap.type    = THREE.PCFSoftShadowMap
         container.appendChild(renderer.domElement)
 
-        // ── Environment (PMREM from RoomEnvironment — gives PBR materials
-        //    realistic reflections and proper IBL lighting) ───────────────
-        const pmrem      = new THREE.PMREMGenerator(renderer)
-        pmrem.compileEquirectangularShader()
-        const envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
-        scene.environment    = envTexture
-        scene.environmentIntensity = 1.5
-        pmrem.dispose()
+        // ── Lights — dark/moody: black and grey tones only ───────────────
+        scene.add(new THREE.AmbientLight(0xffffff, 0.06))   // near-black base
 
-        // ── Lights ─────────────────────────────────────────────
-        scene.add(new THREE.AmbientLight(0xffffff, 0.4))
+        const keyLight = new THREE.DirectionalLight(0xcccccc, 1.0)  // neutral grey key
+        keyLight.position.set(-3, 4, 2)
+        scene.add(keyLight)
 
-        const dirLight = new THREE.DirectionalLight(0xffeedd, 2.5)
-        dirLight.position.set(4, 6, 4)
-        dirLight.castShadow           = true
-        dirLight.shadow.mapSize.set(2048, 2048)
-        dirLight.shadow.camera.near   = 0.5
-        dirLight.shadow.camera.far    = 20
-        dirLight.shadow.bias          = -0.001
-        scene.add(dirLight)
-
-        const fillLight = new THREE.DirectionalLight(0x88aaff, 1.2)
-        fillLight.position.set(-4, -2, -4)
-        scene.add(fillLight)
-
-        const rimLight = new THREE.PointLight(0xffffff, 1.5)
-        rimLight.position.set(0, 2, -3)
+        const rimLight = new THREE.PointLight(0x888888, 0.7)        // grey rim from behind
+        rimLight.position.set(1, 1, -4)
         scene.add(rimLight)
 
         // ── Load GLB ───────────────────────────────────────────

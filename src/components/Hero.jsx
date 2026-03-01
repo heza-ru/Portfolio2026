@@ -43,7 +43,6 @@ export default function Hero({ isLoaded }) {
                     transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                     style={{ y: yBg }}
                     className="absolute inset-0 z-[1]"
-                    data-cursor="VIEW"
                 >
                     <HeroModel />
                 </motion.div>
