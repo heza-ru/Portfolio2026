@@ -19,7 +19,7 @@ export default function Hero({ isLoaded }) {
             <section
                 id="hero"
                 ref={container}
-                className="relative sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]"
+                className="relative sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]"
             >
                 {/* ── Back name: Mohammad — Layer 1 (behind portrait) ── */}
                 <motion.div
@@ -30,7 +30,7 @@ export default function Hero({ isLoaded }) {
                         initial={{ x: '-40%', opacity: 0 }}
                         animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
                         transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                        className="font-drama italic text-[clamp(4rem,14vw,14rem)] leading-none text-[#F0EDE8]/90 select-none"
+                        className="font-drama italic text-[clamp(2.8rem,14vw,14rem)] leading-none text-[#F0EDE8]/90 select-none"
                     >
                         Mohammad
                     </motion.h1>
@@ -56,7 +56,7 @@ export default function Hero({ isLoaded }) {
                         initial={{ x: '40%', opacity: 0 }}
                         animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
                         transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-                        className="font-drama italic text-[clamp(4rem,14vw,14rem)] leading-none text-[#F0EDE8] select-none text-right"
+                        className="font-drama italic text-[clamp(2.8rem,14vw,14rem)] leading-none text-[#F0EDE8] select-none text-right"
                     >
                         Haider
                     </motion.h1>

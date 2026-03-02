@@ -18,7 +18,7 @@ export default function Philosophy() {
     return (
         <section
             ref={container}
-            className="relative sticky top-0 z-0 h-screen w-full flex flex-col justify-center py-16 bg-[#0A0A0A] overflow-hidden"
+            className="relative sticky top-0 z-0 h-[100dvh] w-full flex flex-col justify-center py-10 md:py-16 bg-[#0A0A0A] overflow-hidden"
         >
             {/* Layer 0: Background Texture Parallax */}
             <motion.div
@@ -45,7 +45,7 @@ export default function Philosophy() {
             <div className="relative z-10 container mx-auto px-6 md:px-20 text-[#F0EDE8]">
 
                 {/* Contrasting Statements */}
-                <div className="flex flex-col gap-8 md:gap-12 max-w-5xl mx-auto mb-16 md:mb-24">
+                <div className="flex flex-col gap-5 md:gap-12 max-w-5xl mx-auto mb-8 md:mb-24">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
@@ -61,7 +61,7 @@ export default function Philosophy() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-10%" }}
                         transition={{ duration: 0.8, delay: 0.2 }}
-                        className="font-drama italic text-[clamp(2.5rem,5vw,5rem)] leading-tight drop-shadow-lg"
+                        className="font-drama italic text-[clamp(1.25rem,3.8vw,5rem)] leading-tight drop-shadow-lg"
                         data-cursor="READ"
                     >
                         "The difference between an application and an experience is the intentional calibration of empty space and motion."
@@ -107,7 +107,7 @@ function ProcessStep({ number, title, desc, delay }) {
             <div className="font-mono text-xs opacity-40 group-hover:text-accent transition-colors">
                 Phase {number}
             </div>
-            <h3 className="font-heading text-3xl tracking-tight uppercase group-hover:pl-2 transition-all duration-300">
+            <h3 className="font-heading text-xl md:text-3xl tracking-tight uppercase group-hover:pl-2 transition-all duration-300">
                 {title}
             </h3>
             <p className="font-body text-sm opacity-60 leading-relaxed pr-6">

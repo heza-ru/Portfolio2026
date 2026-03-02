@@ -25,8 +25,6 @@ export default function StackingSections({ children, nextSectionRef }) {
     useEffect(() => {
         if (!nextSectionRef?.current) return
 
-        ScrollTrigger.normalizeScroll(true)
-
         const ctx = gsap.context(() => {
             const cards    = gsap.utils.toArray('.stacking-section', container.current)
             const overlays = gsap.utils.toArray('.stacking-overlay',  container.current)

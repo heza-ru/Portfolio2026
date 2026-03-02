@@ -27,7 +27,7 @@ export default function Grid() {
     return (
         <section
             ref={container}
-            className="relative h-screen w-full py-24 px-6 md:px-20 bg-[#0A0A0A] overflow-hidden flex flex-col"
+            className="relative h-[100dvh] w-full py-14 md:py-24 px-4 md:px-20 bg-[#0A0A0A] overflow-hidden flex flex-col"
         >
             {/* Background Ghost Numeral */}
             <motion.div
@@ -41,7 +41,7 @@ export default function Grid() {
 
             <div className="relative z-10 container mx-auto flex flex-col gap-8 text-[#F0EDE8] h-full">
                 <div className="flex justify-between items-end flex-shrink-0">
-                    <h2 className="font-heading text-[clamp(2.5rem,6vw,6rem)] leading-none uppercase tracking-tight">
+                    <h2 className="font-heading text-[clamp(1.6rem,6vw,6rem)] leading-none uppercase tracking-tight">
                         Information<br />Architecture
                     </h2>
                     <span className="font-mono text-sm opacity-60 hidden md:block">
@@ -54,7 +54,7 @@ export default function Grid() {
                     whileInView="animate"
                     viewport={{ once: true, margin: '-10%' }}
                     transition={{ staggerChildren: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 lg:grid-rows-3 gap-4 md:gap-6 flex-1 min-h-0 pb-4"
+                    className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 lg:grid-rows-3 gap-2 md:gap-6 flex-1 min-h-0 pb-2"
                 >
 
                     {/* ── Stat Counter (1x2) ── */}
@@ -62,7 +62,7 @@ export default function Grid() {
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover="hover"
-                        className="lg:col-span-2 lg:row-span-2 border border-white/10 rounded-2xl p-8 flex flex-col justify-between group overflow-hidden relative cursor-default bg-[#0A0A0A]"
+                        className="lg:col-span-2 lg:row-span-2 border border-white/10 rounded-xl md:rounded-2xl p-4 md:p-8 flex flex-col justify-between group overflow-hidden relative cursor-default bg-[#0A0A0A]"
                     >
                         {/* Pixel-reveal wraps the background texture image */}
                         <PixelReveal
@@ -80,8 +80,8 @@ export default function Grid() {
                         </PixelReveal>
 
                         <div className="relative z-10 flex flex-col gap-2">
-                            <span className="font-mono text-xs uppercase tracking-widest opacity-60">Lines of Code Deployed</span>
-                            <span className="font-heading text-5xl md:text-7xl text-accent">2M+</span>
+                            <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-60">Lines of Code Deployed</span>
+                            <span className="font-heading text-3xl md:text-5xl lg:text-7xl text-accent">2M+</span>
                         </div>
                         <div className="relative z-10 font-mono text-sm opacity-50 group-hover:opacity-100 transition-opacity">
                             Continual iteration loop.
@@ -93,7 +93,7 @@ export default function Grid() {
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover="hover"
-                        className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-2xl overflow-hidden relative group bg-black"
+                        className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-xl md:rounded-2xl overflow-hidden relative group bg-black"
                     >
                         <ImageParallax style={{ width: '100%', height: '100%' }} intensity={14}>
                             {/* PixelReveal wraps the entire cell content */}
@@ -122,14 +122,14 @@ export default function Grid() {
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover={{ y: -4, backgroundColor: 'rgba(232, 168, 124, 0.05)' }}
-                        className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-2xl p-6 flex flex-col justify-center overflow-hidden bg-[#0A0A0A]"
+                        className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-6 flex flex-col justify-center overflow-hidden bg-[#0A0A0A]"
                         data-cursor="DRAG"
                     >
                         <div className="relative flex whitespace-nowrap overflow-hidden">
                             <motion.div
                                 animate={{ x: [0, -1000] }}
                                 transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                                className="font-heading text-5xl md:text-6xl text-transparent bg-clip-text"
+                                className="font-heading text-3xl md:text-5xl lg:text-6xl text-transparent bg-clip-text"
                                 style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)' }}
                             >
                                 UI/UX ENGINEERING • WEBGL SHADERS • CREATIVE DIRECTION • INTERACTIVE PROTOTYPING •&nbsp;
@@ -143,7 +143,7 @@ export default function Grid() {
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover="hover"
-                        className="flex items-center justify-center border border-white/10 rounded-2xl p-6 group bg-[#0A0A0A] relative"
+                        className="flex items-center justify-center border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-6 group bg-[#0A0A0A] relative"
                         data-cursor="READ"
                     >
                         <div className="text-center font-mono opacity-80 group-hover:text-accent transition-colors">
@@ -157,12 +157,12 @@ export default function Grid() {
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover="hover"
-                        className="lg:col-span-3 lg:row-span-1 border border-white/10 rounded-2xl p-8 flex flex-col overflow-hidden relative group bg-[#0A0A0A]"
+                        className="lg:col-span-3 lg:row-span-1 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-8 flex flex-col overflow-hidden relative group bg-[#0A0A0A]"
                     >
-                        <span className="font-mono text-xs uppercase tracking-widest opacity-60 mb-6">Execution Stack</span>
-                        <div className="flex flex-wrap gap-2 text-sm font-mono opacity-80">
+                        <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest opacity-60 mb-2 md:mb-6">Execution Stack</span>
+                        <div className="flex flex-wrap gap-1 md:gap-2 text-[10px] md:text-sm font-mono opacity-80">
                             {['React 19', 'Next.js', 'Three.js / React-Three-Fiber', 'GSAP', 'Tailwind', 'GLSL Shaders', 'Framer Motion', 'Figma', 'Spline', 'Lenis'].map((tool) => (
-                                <span key={tool} className="border border-white/20 rounded-full px-4 py-1 group-hover:border-white/40 transition-colors">
+                                <span key={tool} className="border border-white/20 rounded-full px-2 md:px-4 py-0.5 md:py-1 group-hover:border-white/40 transition-colors">
                                     {tool}
                                 </span>
                             ))}
@@ -174,10 +174,10 @@ export default function Grid() {
                         variants={cellVariants}
                         transition={{ ease: [0.76, 0, 0.24, 1], duration: 0.6 }}
                         whileHover={{ y: -4, backgroundColor: 'rgba(240, 237, 232, 0.05)' }}
-                        className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-2xl p-8 flex flex-col justify-between group bg-[#0A0A0A] relative overflow-hidden"
+                        className="col-span-1 md:col-span-2 lg:col-span-2 border border-white/10 rounded-xl md:rounded-2xl p-4 md:p-8 flex flex-col justify-between group bg-[#0A0A0A] relative overflow-hidden"
                         data-cursor="CLICK"
                     >
-                        <div className="font-drama italic text-3xl md:text-4xl text-white group-hover:text-accent transition-colors">
+                        <div className="font-drama italic text-lg md:text-4xl text-white group-hover:text-accent transition-colors">
                             Initialize a conversation.
                         </div>
                         <a

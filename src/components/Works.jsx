@@ -51,46 +51,45 @@ export default function Works() {
     const scrollTrackRef = useRef(null)
 
     React.useEffect(() => {
-        // Normalise touch/pointer scroll so GSAP pin+scrub works on mobile
-        ScrollTrigger.normalizeScroll(true)
+        /*
+         * DO NOT call ScrollTrigger.normalizeScroll(true) here.
+         * ReactLenis (root) + useLenis(ScrollTrigger.update) already bridge
+         * all scroll events to ScrollTrigger. Calling normalizeScroll on top
+         * of Lenis causes touch events to be processed twice, which makes a
+         * single swipe jump 5-6 panels at once on mobile.
+         */
 
         const ctx = gsap.context(() => {
             const track  = scrollTrackRef.current
             const panels = gsap.utils.toArray('.work-panel')
 
-            // ─── Tune these two values independently ──────────────────────
-            //
-            // HORIZONTAL: how far the track moves (px).
-            //   1.0 = last panel lands exactly flush with the right viewport edge
-            //   0.9 = slight under-travel (last panel peeks in from the right)
-            //   1.1 = slight over-travel (last panel overshoots)
             const HORIZONTAL_MULTIPLIER = 1.0
             const horizontalTravel = () =>
                 (track.offsetWidth - window.innerWidth) * HORIZONTAL_MULTIPLIER
 
-            // VERTICAL: how much the user scrolls (px) while Works is pinned.
-            // Expressed as a fraction of the total track width — so it scales
-            // proportionally no matter how many panels or what screen size.
-            //   0.5 = next section starts at half the track width  (current)
-            //   1.0 = next section starts at full track width
-            //   0.25 = next section starts at quarter of track width (faster)
-            const VERTICAL_MULTIPLIER = 0.5
-            const verticalBudget = () => track.offsetWidth * VERTICAL_MULTIPLIER
-            // ──────────────────────────────────────────────────────────────
+            // On mobile screens give more vertical scroll budget per panel so
+            // a single swipe doesn't fly through multiple panels.
+            const isMobile = () => window.innerWidth < 768
+            const VERTICAL_MULTIPLIER_DESKTOP = 0.5
+            const VERTICAL_MULTIPLIER_MOBILE  = 1.4
+            const verticalBudget = () =>
+                track.offsetWidth * (isMobile() ? VERTICAL_MULTIPLIER_MOBILE : VERTICAL_MULTIPLIER_DESKTOP)
 
             gsap.to(track, {
-                x: () => -horizontalTravel(),   // pixel translation — uses HORIZONTAL_MULTIPLIER
+                x: () => -horizontalTravel(),
                 ease: 'none',
                 scrollTrigger: {
                     trigger: container.current,
                     start: 'top top',
-                    end: verticalBudget,          // vertical scroll budget — uses VERTICAL_MULTIPLIER
-                    invalidateOnRefresh: true,     // recalc both on resize
-                    scrub: true,
+                    end: verticalBudget,
+                    invalidateOnRefresh: true,
+                    scrub: 1,          // slight lag makes mobile feel smoother
                     snap: {
-                        snapTo: 1 / (panels.length - 1),
-                        duration: { min: 0.1, max: 0.4 },
-                        ease: 'power1.inOut',
+                        snapTo:      1 / (panels.length - 1),
+                        directional: true,   // one panel per swipe — prevents multi-panel jumps
+                        duration:    { min: 0.3, max: 0.6 },
+                        delay:       0.05,
+                        ease:        'power1.inOut',
                     },
                     pin: true,
                     pinSpacing: true,
@@ -102,10 +101,10 @@ export default function Works() {
     }, [])
 
     return (
-        <section ref={container} className="relative h-screen w-full bg-[#F0EDE8] overflow-hidden">
+        <section ref={container} className="relative h-[100dvh] w-full bg-[#F0EDE8] overflow-hidden">
             {/* Works Header */}
-            <div className="absolute top-24 left-6 md:left-20 z-50 text-[#0A0A0A] pointer-events-none">
-                <h2 className="font-heading text-[clamp(2.5rem,5vw,5rem)] leading-none uppercase tracking-tight">
+            <div className="absolute top-16 md:top-24 left-5 md:left-20 z-50 text-[#0A0A0A] pointer-events-none">
+                <h2 className="font-heading text-[clamp(1.8rem,5vw,5rem)] leading-none uppercase tracking-tight">
                     Selected<br />Works
                 </h2>
             </div>
@@ -130,7 +129,7 @@ const WorkPanel = ({ project, index }) => {
     const yBg = useTransform(scrollYProgress, [0, 1], ['-10%', '10%'])
 
     return (
-        <div className="work-panel w-screen h-screen flex items-center justify-center p-6 md:p-24 pb-12 pt-48 md:pt-48 group">
+        <div className="work-panel w-screen h-[100dvh] flex items-center justify-center p-4 md:p-24 pb-6 md:pb-12 pt-24 md:pt-48 group">
             <ImageParallax className="relative w-full h-full" intensity={8}>
             <div className="w-full h-full overflow-hidden rounded-xl md:rounded-3xl" data-cursor="VIEW WORK">
                 <div ref={panelInner} className="absolute inset-0 w-full h-full overflow-hidden">
@@ -163,7 +162,7 @@ const WorkPanel = ({ project, index }) => {
                         <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-accent mb-3 opacity-90 backdrop-blur-sm w-fit px-3 py-1.5 rounded-sm border border-white/20 bg-black/20">
                             {String(index + 1).padStart(2, '0')} // {project.category}
                         </span>
-                        <h3 className="font-drama italic text-4xl md:text-6xl lg:text-[7rem] leading-none text-[#F0EDE8] drop-shadow-2xl mb-4">
+                        <h3 className="font-drama italic text-3xl md:text-6xl lg:text-[7rem] leading-none text-[#F0EDE8] drop-shadow-2xl mb-2 md:mb-4">
                             {project.title}
                         </h3>
                         <p className="font-body text-sm md:text-base text-white/80 leading-relaxed max-w-lg drop-shadow-md">
