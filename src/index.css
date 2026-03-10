@@ -215,6 +215,129 @@
     visibility: hidden;
   }
 
+  /* ── CODE (9) Split-Screen Preloader ─────────────────────────────────── */
+
+  .pl-preloader,
+  .pl-split-overlay,
+  .pl-tags-overlay {
+    position: fixed;
+    width: 100vw;
+    height: 100svh;
+    top: 0;
+    left: 0;
+  }
+
+  .pl-preloader,
+  .pl-split-overlay {
+    background-color: #ffffff;
+    color: #0A0A0A;
+  }
+
+  .pl-preloader,
+  .pl-tags-overlay {
+    z-index: 9999;
+  }
+
+  .pl-split-overlay {
+    z-index: 9998;
+  }
+
+  /* Title — centered in the overlay */
+  .pl-intro-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+  }
+
+  .pl-intro-title h1 {
+    text-transform: uppercase;
+    font-size: 6rem;
+    font-weight: 600;
+    line-height: 1;
+    font-family: 'Clash Display', sans-serif;
+    letter-spacing: -0.02em;
+    color: #0A0A0A;
+    /* Hidden until SplitText wraps the chars — prevents raw text flash on first paint */
+    visibility: hidden;
+  }
+
+  /* Ambient discipline tags */
+  .pl-tags-overlay {
+    pointer-events: none;
+  }
+
+  .pl-tag {
+    position: absolute;
+    width: max-content;
+    color: #999999;
+    overflow: hidden;
+  }
+
+  .pl-tag p {
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    font-family: 'IBM Plex Mono', monospace;
+    /* Hidden until SplitText wraps the words */
+    visibility: hidden;
+  }
+
+  .pl-tag-1 { top: 15%;    left: 15%;  }
+  .pl-tag-2 { bottom: 15%; left: 25%;  }
+  .pl-tag-3 { bottom: 30%; right: 15%; }
+
+  /* Each char is a clipping container; inner <span> slides in from above */
+  .pl-char {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    margin-top: 0.75rem;
+  }
+
+  .pl-char span {
+    position: relative;
+    display: inline-block;
+    transform: translateY(-100%);
+    will-change: transform;
+  }
+
+  /* Tag words start above their container, animate in/out vertically */
+  .pl-tag .pl-word {
+    position: relative;
+    display: inline-block;
+    transform: translateY(-100%);
+    will-change: transform;
+  }
+
+  /* Horizontal cut line — sweeps across then sits at the split seam */
+  .pl-cut-line {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    margin-top: -1.5px;
+    background-color: #0A0A0A;
+    transform: scaleX(0);
+    transform-origin: left center;
+    z-index: 10000;
+    will-change: transform, opacity;
+  }
+
+  @media (max-width: 1000px) {
+    .pl-intro-title h1 {
+      font-size: 2.5rem;
+    }
+
+    .pl-char {
+      margin-top: 0.5rem;
+    }
+  }
+
   /* ── Custom Cursor ── */
   [data-cursor] {
     cursor: none;
