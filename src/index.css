@@ -297,29 +297,35 @@
     justify-content: center;
     align-items: center;
     gap: 2.5rem;
-    padding: 10rem 2rem;
+    padding: 10rem 4vw;
   }
 
   .wia-eyebrow {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.25em;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(6.4rem, 12vw, 12rem);
+    font-weight: 700;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: rgba(240, 237, 232, 0.35);
+    color: #F0EDE8;
   }
 
   /* Two-layer text reveal — dim base + GSAP-clipped bright copy */
   .wia-text-wrap {
     position: relative;
-    width: min(64ch, 90%);
+    width: 100%;
   }
 
   .wia-text {
     font-family: 'Instrument Serif', serif;
-    font-size: clamp(1.6rem, 3vw, 3.5rem);
+    font-size: 4rem;        /* fallback; JS overrides via fitToWidth */
     font-weight: 400;
-    line-height: 1.25;
+    line-height: 1.1;
     text-align: center;
+    visibility: hidden;     /* hidden until JS sizes it */
   }
 
   .wia-text-dim {
@@ -390,5 +396,163 @@
     clip-path: inset(0 0 var(--about-clip) 0);
     will-change: clip-path;
     pointer-events: none;
+  }
+
+  /* ── Works section ───────────────────────────────────────────────────── */
+
+  .works-section {
+    background: #0A0A0A;
+    padding: 10rem 4vw 14rem;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .works-grid-wrap {
+    overflow: hidden;
+    padding: 4rem 0;
+  }
+
+  /* Header — mirrors wia-eyebrow layout + role-row scale */
+  .works-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(2.5rem, 11vw, 11rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    color: #F0EDE8;
+    margin-bottom: 8rem;
+    flex-wrap: wrap;
+    gap: 0 2vw;
+  }
+
+  /* Two-column grid */
+  .works-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 42%);
+    justify-content: center;
+    gap: 5rem 6%;
+    align-items: start;
+  }
+
+  /* Outer wrapper — receives GSAP parallax y-transform only */
+  .works-polaroid-wrap {
+    will-change: transform;
+  }
+
+  /* Polaroid card — receives 3-D tilt only */
+  .works-polaroid {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    background: #F0EDE8;
+    padding: 0.75rem 0.75rem 3.5rem;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .works-polaroid:hover {
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+
+  /* Image area — clips the oversized inner wrapper */
+  .works-polaroid-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    display: block;
+  }
+
+  /* Inner wrapper — 240px taller (120px extra top + bottom) to absorb ±100px shift */
+  .works-polaroid-img-inner {
+    width: 100%;
+    height: calc(100% + 240px);
+    margin-top: -120px;
+    will-change: transform;
+  }
+
+  .works-polaroid-img-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Caption strip */
+  .works-polaroid-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0.9rem 0.25rem 0;
+  }
+
+  .works-polaroid-title {
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(0.9rem, 1.4vw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: #0A0A0A;
+  }
+
+  .works-polaroid-cat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    color: rgba(10, 10, 10, 0.5);
+    text-transform: uppercase;
+  }
+
+  /* Negative edge overlay — difference blend only on the border ring */
+  .works-polaroid-edge {
+    position: absolute;
+    inset: 0;
+    border: 8px solid white;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* See More button */
+  .works-see-more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 6rem;
+  }
+
+  .works-see-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2.2rem;
+    border: 1.5px solid rgba(240, 237, 232, 0.4);
+    color: #F0EDE8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+
+  .works-see-more:hover {
+    background: #F0EDE8;
+    color: #0A0A0A;
+    border-color: #F0EDE8;
+  }
+
+  @media (max-width: 640px) {
+    .works-grid {
+      grid-template-columns: 1fr;
+    }
+    .works-header {
+      flex-direction: column;
+      gap: 0;
+    }
   }
 }

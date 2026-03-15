@@ -2,45 +2,59 @@ import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-const BIO = 'A multidisciplinary engineer, designer and consultant — building digital products and systems with clarity, craft and lasting purpose.'
+const BIO = 'A multidisciplinary engineer, designer and consultant — passionate about merging design and engineering to craft smooth, interactive experiences. Building digital products with a focus on motion, performance, and lasting purpose.'
+
+/* Binary-search the largest font size (px) where el renders ≤ targetWidth
+   when set to white-space: nowrap (i.e. a single line).                   */
+function fitToWidth(el, targetWidth, { min = 8, max = 400 } = {}) {
+    const prev = el.style.whiteSpace
+    el.style.whiteSpace = 'nowrap'
+    let lo = min, hi = max
+    for (let i = 0; i < 20; i++) {
+        const mid = (lo + hi) / 2
+        el.style.fontSize = `${mid}px`
+        ;(el.scrollWidth <= targetWidth) ? (lo = mid) : (hi = mid)
+    }
+    el.style.whiteSpace = prev
+    return lo
+}
 
 export default function WhoIAm() {
     const containerRef = useRef(null)
 
     useEffect(() => {
+        const dimEl    = document.querySelector('.wia-text-dim')
+        const brightEl = document.querySelector('.wia-text-bright')
+
+        /* ── Size bio text to fill full viewport width ────────────────────── */
+        let rafId
+        function sizeBio() {
+            if (!dimEl || !brightEl) return
+            // fitToWidth finds the font size where the sentence fits on ONE line
+            // at (containerW × 4.5). When text wraps at containerW, that total
+            // length breaks into ~4-5 full-width lines.
+            const containerW = window.innerWidth * 0.92
+            const fs = fitToWidth(dimEl, containerW * 3.5, { min: 8, max: 600 })
+            dimEl.style.fontSize    = `${fs}px`
+            brightEl.style.fontSize = `${fs}px`
+            dimEl.style.visibility    = 'visible'
+            brightEl.style.visibility = 'visible'
+        }
+
+        document.fonts.ready.then(() => {
+            sizeBio()
+            window.addEventListener('resize', sizeBio, { passive: true })
+        })
+
         const ctx = gsap.context(() => {
 
-            /* ── 1. Clip-path text reveal ────────────────────────────────────
-               Two identical paragraphs are stacked.  The bright copy starts
-               fully clipped from the bottom; GSAP unclips it as it scrolls
-               through the viewport centre.                                   */
-            const dimEl    = document.querySelector('.wia-text-dim')
-            const brightEl = document.querySelector('.wia-text-bright')
-
-            if (dimEl && brightEl) {
-                gsap.set(brightEl, { clipPath: 'inset(0 0 100% 0)' })
-
-                ScrollTrigger.create({
-                    trigger: dimEl,
-                    start:   'top 65%',
-                    end:     'bottom 35%',
-                    scrub:   1.2,
-                    onUpdate(self) {
-                        const pct = (1 - self.progress) * 100
-                        gsap.set(brightEl, { clipPath: `inset(0 0 ${pct}% 0)` })
-                    },
-                })
-            }
-
-            /* ── 2. Role rows — slide in from alternating sides ─────────────
-               Rows 0 & 2 enter from the right, row 1 from the left,
-               while the section travels up from below the viewport.          */
+            const vh    = window.innerHeight
             const rolesEl = document.querySelector('.wia-roles')
             const rows    = document.querySelectorAll('.wia-role-row')
 
             if (!rolesEl || !rows.length) return
 
-            // Off-screen starting positions
+            /* ── 1. Role rows — slide in from alternating sides ─────────────── */
             gsap.set(rows[0], { x: '110%' })
             gsap.set(rows[1], { x: '-110%' })
             gsap.set(rows[2], { x: '110%' })
@@ -58,66 +72,131 @@ export default function WhoIAm() {
                 },
             })
 
-            /* ── 3. Role rows — pin + outer rows exit + scale-down ───────────
-               Uses absolute pixel values (vh-based) so the rows reliably
-               exit the overflow:hidden clip boundary of the section.
-                 progress 0→0.5 : rows 0 & 2 slide out (up / down)
-                 progress 0.5→1 : all three scale to a small centred mark    */
-            const vh = window.innerHeight
-
+            /* ── 2. Role rows — pin + outer exit + DESIGNER scale & fade ────────
+               Shorter scroll distance (1.2 × vh) so the outro finishes quickly.
+               Second half: DESIGNER scales down AND fades to nothing.          */
             ScrollTrigger.create({
                 trigger:    rolesEl,
                 start:      'top top',
-                end:        `+=${vh * 2}`,
+                end:        `+=${vh * 1.2}`,   // ← quicker: was vh * 2
                 pin:        true,
                 scrub:      1,
                 pinSpacing: true,
                 onUpdate(self) {
                     if (self.progress <= 0.5) {
                         const p = self.progress / 0.5
-                        gsap.set(rows[0], { y: p * vh * 1.2,  scale: 1 })
-                        gsap.set(rows[2], { y: -p * vh * 1.2, scale: 1 })
-                        gsap.set(rows[1], { scale: 1 })
+                        gsap.set(rows[0], { y:  p * vh * 1.2, scale: 1, opacity: 1 })
+                        gsap.set(rows[2], { y: -p * vh * 1.2, scale: 1, opacity: 1 })
+                        gsap.set(rows[1], { scale: 1, opacity: 1 })
                     } else {
-                        // Lock outer rows off-screen
                         gsap.set(rows[0], { y:  vh * 1.2 })
                         gsap.set(rows[2], { y: -vh * 1.2 })
 
-                        // Scale all three down together (only row 1 is visible)
                         const p        = (self.progress - 0.5) / 0.5
                         const minScale = window.innerWidth <= 768 ? 0.22 : 0.1
                         const scale    = 1 - p * (1 - minScale)
-                        rows.forEach(row => gsap.set(row, { scale }))
+                        const opacity  = 1 - p               // ← fade DESIGNER out
+                        rows.forEach(row => gsap.set(row, { scale, opacity }))
                     }
                 },
             })
 
+            /* ── 3. Clip-path text reveal ────────────────────────────────────────
+               Created AFTER the pin trigger so the pin spacer is already in the
+               DOM and ScrollTrigger positions are accurate.
+               invalidateOnRefresh ensures positions stay correct on resize.    */
+            if (dimEl && brightEl) {
+                gsap.set(brightEl, { clipPath: 'inset(0 0 100% 0)' })
+
+                /* Trigger on the section (not dimEl) so the parallax y-transform
+                   on textWrapEl doesn't offset the start/end positions.         */
+                ScrollTrigger.create({
+                    trigger:             '.wia-about',
+                    start:               'top 65%',
+                    end:                 'bottom 35%',
+                    scrub:               0.5,
+                    invalidateOnRefresh: true,
+                    onUpdate(self) {
+                        const pct = (1 - self.progress) * 100
+                        gsap.set(brightEl, { clipPath: `inset(0 0 ${pct}% 0)` })
+                    },
+                })
+            }
+
+            /* ── 4. Parallax — eyebrow drifts slower, text moves faster ─────────
+               The section is the trigger for both. Eyebrow gets a gentle upward
+               drift (+y → -y), text gets a stronger one so it feels quicker.   */
+            const eyebrowEl  = document.querySelector('.wia-eyebrow')
+            const textWrapEl = document.querySelector('.wia-text-wrap')
+
+            if (eyebrowEl) {
+                gsap.fromTo(eyebrowEl,
+                    { y: 80 },
+                    {
+                        y: -80,
+                        ease: 'none',
+                        scrollTrigger: {
+                            trigger:             '.wia-about',
+                            start:               'top bottom',
+                            end:                 'bottom top',
+                            scrub:               true,
+                            invalidateOnRefresh: true,
+                        },
+                    }
+                )
+            }
+
+            if (textWrapEl) {
+                gsap.fromTo(textWrapEl,
+                    { y: 200 },
+                    {
+                        y: -250,
+                        ease: 'none',
+                        scrollTrigger: {
+                            trigger:             '.wia-about',
+                            start:               'top bottom',
+                            end:                 'bottom top',
+                            scrub:               true,
+                            invalidateOnRefresh: true,
+                        },
+                    }
+                )
+            }
+
+            // Force recalculation after all triggers + pin spacer are in the DOM
+            ScrollTrigger.refresh()
+
         }, containerRef)
 
-        return () => ctx.revert()
+        return () => {
+            ctx.revert()
+            window.removeEventListener('resize', sizeBio)
+            cancelAnimationFrame(rafId)
+        }
     }, [])
 
     return (
-        /* Dark background on the container itself prevents any transparent
-           gap showing through during the pin-spacer scroll phase.           */
         <div ref={containerRef} style={{ backgroundColor: '#0A0A0A' }}>
 
-            {/* ── Section 1: Who I Am ──────────────────────────────────────── */}
-            <section className="wia-about">
-                <p className="wia-eyebrow">Who I Am</p>
-
-                {/* Two-layer text reveal: dim base + GSAP-animated bright copy */}
-                <div className="wia-text-wrap">
-                    <p className="wia-text wia-text-dim">{BIO}</p>
-                    <p className="wia-text wia-text-bright" aria-hidden="true">{BIO}</p>
-                </div>
-            </section>
-
-            {/* ── Section 2: Roles reveal ───────────────────────────────────── */}
+            {/* ── Section 1: Roles reveal ───────────────────────────────────── */}
             <section className="wia-roles">
                 <div className="wia-role-row">ENGINEER</div>
                 <div className="wia-role-row">DESIGNER</div>
                 <div className="wia-role-row">CONSULTANT</div>
+            </section>
+
+            {/* ── Section 2: Who I Am ──────────────────────────────────────── */}
+            <section className="wia-about">
+                <div className="wia-eyebrow">
+                    <span>Who</span>
+                    <span>I</span>
+                    <span>Am</span>
+                </div>
+
+                <div className="wia-text-wrap">
+                    <p className="wia-text wia-text-dim">{BIO}</p>
+                    <p className="wia-text wia-text-bright" aria-hidden="true">{BIO}</p>
+                </div>
             </section>
 
         </div>

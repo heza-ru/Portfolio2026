@@ -28,6 +28,7 @@ import GlobalDigitalEffect from './components/GlobalDigitalEffect'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import WhoIAm from './components/WhoIAm'
+import Works from './components/Works'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import Preloader from './components/Preloader'
 
@@ -54,6 +55,7 @@ function App() {
                     <Hero isLoaded={loaded} />
                     <Navbar isLoaded={loaded} />
                     <WhoIAm />
+                    <Works />
                 </main>
             </div>
         </ReactLenis>
