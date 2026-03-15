@@ -158,29 +158,26 @@ export default function Works() {
     useEffect(() => {
         const ctx = gsap.context(() => {
 
-            /* ── Card parallax ──────────────────────────────────────────────────
-               Left column starts lower (+120) and drifts up aggressively → -80.
-               Right column starts at its natural position (0) and drifts up
-               gently → -40.  The initial offset of 120px gives the left column
-               a staggered-down start that snaps into a proper grid as you scroll,
-               which is the classic editorial parallax feel.                     */
-            document.querySelectorAll('.works-polaroid-wrap').forEach((wrap, i) => {
-                const isLeft = i % 2 === 0
-                gsap.fromTo(wrap,
-                    { y: isLeft ? 120 : 0   },
-                    {
-                        y:    isLeft ? -80  : -40,
-                        ease: 'none',
-                        scrollTrigger: {
-                            trigger:             wrap,
-                            start:               'top bottom',
-                            end:                 'bottom top',
-                            scrub:               true,
-                            invalidateOnRefresh: true,
-                        },
-                    }
-                )
-            })
+            /* ── Card parallax (desktop only) ───────────────────────────────── */
+            if (window.innerWidth >= 768) {
+                document.querySelectorAll('.works-polaroid-wrap').forEach((wrap, i) => {
+                    const isLeft = i % 2 === 0
+                    gsap.fromTo(wrap,
+                        { y: isLeft ? 120 : 0   },
+                        {
+                            y:    isLeft ? -80  : -40,
+                            ease: 'none',
+                            scrollTrigger: {
+                                trigger:             wrap,
+                                start:               'top bottom',
+                                end:                 'bottom top',
+                                scrub:               true,
+                                invalidateOnRefresh: true,
+                            },
+                        }
+                    )
+                })
+            }
 
             /* ── Image inner parallax ───────────────────────────────────────────
                The inner wrapper (not the img itself) gets the y shift so it

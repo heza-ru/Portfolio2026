@@ -30,11 +30,14 @@ export default function WhoIAm() {
         let rafId
         function sizeBio() {
             if (!dimEl || !brightEl) return
-            // fitToWidth finds the font size where the sentence fits on ONE line
-            // at (containerW × 4.5). When text wraps at containerW, that total
-            // length breaks into ~4-5 full-width lines.
-            const containerW = window.innerWidth * 0.92
-            const fs = fitToWidth(dimEl, containerW * 3.5, { min: 8, max: 600 })
+            const containerW  = window.innerWidth * 0.92
+            const mobile      = window.innerWidth < 768
+            // Desktop multiplier 3.5 → ~3-4 lines at desktop widths.
+            // Mobile multiplier 10  → ~24 px font on a 375 px screen (readable).
+            // The multiplier = how many containerW-widths the one-line text spans;
+            // more = bigger font = fewer words per line when it wraps.
+            const multiplier  = mobile ? 10 : 3.5
+            const fs = fitToWidth(dimEl, containerW * multiplier, { min: 8, max: 600 })
             dimEl.style.fontSize    = `${fs}px`
             brightEl.style.fontSize = `${fs}px`
             dimEl.style.visibility    = 'visible'

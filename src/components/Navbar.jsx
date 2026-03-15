@@ -289,11 +289,16 @@ export default function Navbar({ isLoaded }) {
                     <div className="absolute top-6 right-6 md:top-8 md:right-12 z-[2000] pointer-events-auto">
                         <button
                             onClick={closeMenu}
-                            className="p-3 rounded-full border border-white/10 hover:border-accent hover:text-accent transition-colors bg-[#0A0A0A]/50 backdrop-blur-md"
+                            className="p-3 border border-white/20 hover:border-white/60 transition-colors"
                             aria-label="Close menu"
-                            style={{ pointerEvents: 'auto' }}
+                            style={{
+                                pointerEvents: 'auto',
+                                background: '#F0EDE8',
+                                color: '#0A0A0A',
+                                mixBlendMode: 'difference',
+                            }}
                         >
-                            <X size={24} />
+                            <X size={22} strokeWidth={2} />
                         </button>
                     </div>
 
