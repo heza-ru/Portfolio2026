@@ -218,8 +218,7 @@
   /* ── CODE (9) Split-Screen Preloader ─────────────────────────────────── */
 
   .pl-preloader,
-  .pl-split-overlay,
-  .pl-tags-overlay {
+  .pl-split-overlay {
     position: fixed;
     width: 100vw;
     height: 100svh;
@@ -233,84 +232,40 @@
     color: #0A0A0A;
   }
 
-  .pl-preloader,
-  .pl-tags-overlay {
-    z-index: 9999;
-  }
+  .pl-preloader    { z-index: 9999; }
+  .pl-split-overlay { z-index: 9998; }
 
-  .pl-split-overlay {
-    z-index: 9998;
-  }
-
-  /* Title — centered in the overlay */
-  .pl-intro-title {
+  /* Each overlay is divided into two equal halves.
+     overflow:hidden is what clips the curtain-reveal animation. */
+  .pl-half {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    left: 0;
     width: 100%;
-    text-align: center;
+    height: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
-  .pl-intro-title h1 {
-    text-transform: uppercase;
-    font-size: 6rem;
-    font-weight: 600;
-    line-height: 1;
-    font-family: 'Clash Display', sans-serif;
-    letter-spacing: -0.02em;
+  .pl-top    { top: 0; }
+  .pl-bottom { bottom: 0; }
+
+  /* Shared text style — Instrument Serif, same config as the hero title.
+     Font-size is set at runtime by fitToWidth().
+     visibility:hidden prevents the one-frame blink at default CSS size. */
+  .pl-text {
+    visibility: hidden;
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-style: normal;
     color: #0A0A0A;
-    /* Hidden until SplitText wraps the chars — prevents raw text flash on first paint */
-    visibility: hidden;
-  }
-
-  /* Ambient discipline tags */
-  .pl-tags-overlay {
-    pointer-events: none;
-  }
-
-  .pl-tag {
-    position: absolute;
-    width: max-content;
-    color: #999999;
-    overflow: hidden;
-  }
-
-  .pl-tag p {
-    text-transform: uppercase;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    font-family: 'IBM Plex Mono', monospace;
-    /* Hidden until SplitText wraps the words */
-    visibility: hidden;
-  }
-
-  .pl-tag-1 { top: 15%;    left: 15%;  }
-  .pl-tag-2 { bottom: 15%; left: 25%;  }
-  .pl-tag-3 { bottom: 30%; right: 15%; }
-
-  /* Each char is a clipping container; inner <span> slides in from above */
-  .pl-char {
-    position: relative;
-    display: inline-block;
-    overflow: hidden;
-    margin-top: 0.75rem;
-  }
-
-  .pl-char span {
-    position: relative;
-    display: inline-block;
-    transform: translateY(-100%);
-    will-change: transform;
-  }
-
-  /* Tag words start above their container, animate in/out vertically */
-  .pl-tag .pl-word {
-    position: relative;
-    display: inline-block;
-    transform: translateY(-100%);
-    will-change: transform;
+    white-space: nowrap;
+    line-height: 0.9;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    width: 100%;
   }
 
   /* Horizontal cut line — sweeps across then sits at the split seam */
@@ -328,14 +283,82 @@
     will-change: transform, opacity;
   }
 
-  @media (max-width: 1000px) {
-    .pl-intro-title h1 {
-      font-size: 2.5rem;
-    }
 
-    .pl-char {
-      margin-top: 0.5rem;
-    }
+  /* ── CODE (10) Who I Am section ──────────────────────────────────────── */
+
+  /* Section 1 — paragraph text reveal */
+  .wia-about {
+    position: relative;
+    width: 100%;
+    min-height: 100svh;
+    background-color: #0A0A0A;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2.5rem;
+    padding: 10rem 2rem;
+  }
+
+  .wia-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(240, 237, 232, 0.35);
+  }
+
+  /* Two-layer text reveal — dim base + GSAP-clipped bright copy */
+  .wia-text-wrap {
+    position: relative;
+    width: min(64ch, 90%);
+  }
+
+  .wia-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(1.6rem, 3vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .wia-text-dim {
+    color: rgba(240, 237, 232, 0.18);
+  }
+
+  .wia-text-bright {
+    position: absolute;
+    inset: 0;
+    color: #F0EDE8;
+    will-change: clip-path;
+  }
+
+  /* Section 2 — full-width role rows */
+  .wia-roles {
+    position: relative;
+    width: 100%;
+    height: 100svh;
+    background-color: #0A0A0A;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .wia-role-row {
+    position: relative;
+    width: 100%;
+    padding: 0 2vw;
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(2.5rem, 13.5vw, 13.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    text-align: center;
+    color: #F0EDE8;
+    background-color: #0A0A0A;   /* masks rows stacking behind each other */
+    will-change: transform;
   }
 
   /* ── Custom Cursor ── */

@@ -51,14 +51,9 @@ export default function ScrollProgressBar() {
             className="scroll-progress-container"
             style={{
                 position: 'fixed',
-                /*
-                 * Positioned so the bar sits in the gap between the
-                 * "Contact" nav link (~300 px from right) and the
-                 * "Menu" button (~154 px from right). Midpoint ≈ 196 px.
-                 */
-                right: '196px',
+                right: 0,
                 top: 0,
-                width: '80px',
+                width: '3px',
                 height: '100vh',
                 pointerEvents: 'none',
                 zIndex: 200,

@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+
+const lerp = (a, b, t) => a + (b - a) * t
 
 export default function HeroModel({ className = '' }) {
     const containerRef = useRef(null)
@@ -12,41 +15,60 @@ export default function HeroModel({ className = '' }) {
         const w = container.clientWidth
         const h = container.clientHeight
 
-        // ── Scene ──────────────────────────────────────────────
-        const scene    = new THREE.Scene()
-        const camera   = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000)
+        // ── Scene ──────────────────────────────────────────────────────────
+        const scene = new THREE.Scene()
+        scene.background = new THREE.Color(0x0a0a0a)
+
+        const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000)
         camera.position.set(0, 0, 5)
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, precision: 'highp' })
+        // ── Renderer ────────────────────────────────────────────────────────
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, precision: 'highp' })
         renderer.setSize(w, h)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.outputColorSpace    = THREE.SRGBColorSpace
-        renderer.shadowMap.enabled = true
-        renderer.shadowMap.type    = THREE.PCFSoftShadowMap
+        renderer.toneMapping         = THREE.ACESFilmicToneMapping
+        renderer.toneMappingExposure = 0.85
         container.appendChild(renderer.domElement)
 
-        // ── Lights — dark/moody: black and grey tones only ───────────────
-        scene.add(new THREE.AmbientLight(0xffffff, 0.06))   // near-black base
+        // ── Environment map (glass needs IBL to refract/reflect) ────────────
+        const pmrem = new THREE.PMREMGenerator(renderer)
+        pmrem.compileEquirectangularShader()
+        const envTexture = pmrem.fromScene(new RoomEnvironment(renderer), 0.02).texture
+        scene.environment = envTexture
+        pmrem.dispose()
 
-        const keyLight = new THREE.DirectionalLight(0xcccccc, 1.0)  // neutral grey key
-        keyLight.position.set(-3, 4, 2)
+        // ── Lights (env map carries the glass; direct lights add edge detail) ─
+        scene.add(new THREE.AmbientLight(0xffffff, 0.10))
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 0.9)
+        keyLight.position.set(-2, 5, 3)
         scene.add(keyLight)
 
-        const rimLight = new THREE.PointLight(0x888888, 0.7)        // grey rim from behind
-        rimLight.position.set(1, 1, -4)
+        const rimLight = new THREE.DirectionalLight(0xaabbff, 0.5)
+        rimLight.position.set(3, 3, -5)
         scene.add(rimLight)
 
-        // ── Load GLB ───────────────────────────────────────────
+        // ── Load GLB ────────────────────────────────────────────────────────
         const loader = new GLTFLoader()
         let modelGroup = null
-        let baseY = 0
+        let baseY      = 0
 
         loader.load(
-            '/HeroModel.glb',
+            '/HeroModel4.glb',
             (gltf) => {
                 modelGroup = gltf.scene
 
-                // Auto-centre and auto-scale to fill 80 % of frame height
+                modelGroup.traverse((child) => {
+                    if (!child.isMesh || !child.material) return
+                    const mats = Array.isArray(child.material) ? child.material : [child.material]
+                    mats.forEach((mat) => {
+                        mat.envMap          = envTexture
+                        mat.envMapIntensity = 1.5
+                        mat.needsUpdate     = true
+                    })
+                })
+
                 const box    = new THREE.Box3().setFromObject(modelGroup)
                 const center = new THREE.Vector3()
                 const size   = new THREE.Vector3()
@@ -59,23 +81,21 @@ export default function HeroModel({ className = '' }) {
                 const fovRad = camera.fov * (Math.PI / 180)
                 const fitH   = 2 * Math.tan(fovRad / 2) * camera.position.z
 
-                // Scale so the full model is 2× the viewport height (zoomed in)
                 modelGroup.scale.setScalar((fitH * 2.0) / maxDim)
-
-                // Shift model down so only the upper half (head → waist) is visible
                 modelGroup.position.y -= fitH * 0.5
-                baseY = modelGroup.position.y   // save for float animation
+                baseY = modelGroup.position.y
 
                 scene.add(modelGroup)
             },
             undefined,
-            (err) => console.error('GLB load error', err)
+            (err) => console.error('GLB load error', err),
         )
 
-        // ── Mouse ──────────────────────────────────────────────
-        const mouse  = { x: 0, y: 0 }
-        const target = { x: 0, y: 0 }
-        const lerp   = (a, b, t) => a + (b - a) * t
+        // ── Mouse-position tracking ─────────────────────────────────────────
+        // Default = "mouse at bottom-centre": target.y = -0.5 → rotation.x ≈ -0.15 rad
+        // Pre-seed mouse to the same value so the model starts in this pose immediately.
+        const target = { x: 0, y: -0.5 }
+        const mouse  = { x: 0, y: -0.5 }
 
         const onMouseMove = (e) => {
             target.x =  (e.clientX / window.innerWidth  - 0.5)
@@ -83,7 +103,7 @@ export default function HeroModel({ className = '' }) {
         }
         window.addEventListener('mousemove', onMouseMove)
 
-        // ── Resize ─────────────────────────────────────────────
+        // ── Resize ──────────────────────────────────────────────────────────
         const onResize = () => {
             const nw = container.clientWidth
             const nh = container.clientHeight
@@ -93,9 +113,9 @@ export default function HeroModel({ className = '' }) {
         }
         window.addEventListener('resize', onResize)
 
-        // ── Render loop ────────────────────────────────────────
+        // ── Render loop ──────────────────────────────────────────────────────
         let rafId
-        let elapsed = 0
+        let elapsed  = 0
         let lastTime = performance.now()
 
         const animate = () => {
@@ -105,25 +125,25 @@ export default function HeroModel({ className = '' }) {
             lastTime    = now
             elapsed    += delta
 
-            mouse.x = lerp(mouse.x, target.x, 0.04)
-            mouse.y = lerp(mouse.y, target.y, 0.04)
+            mouse.x = lerp(mouse.x, target.x, 0.12)
+            mouse.y = lerp(mouse.y, target.y, 0.12)
 
             if (modelGroup) {
-                modelGroup.rotation.y = mouse.x * 0.5
-                modelGroup.rotation.x = mouse.y * 0.3
-                // Float oscillates around the calculated baseY offset
-                modelGroup.position.y = baseY + Math.sin(elapsed * 0.6) * 0.06
+                modelGroup.rotation.y  = mouse.x * 0.5
+                modelGroup.rotation.x  = mouse.y * 0.3
+                modelGroup.position.y  = baseY + Math.sin(elapsed * 0.6) * 0.06
             }
 
             renderer.render(scene, camera)
         }
         animate()
 
-        // ── Cleanup ────────────────────────────────────────────
+        // ── Cleanup ──────────────────────────────────────────────────────────
         return () => {
             cancelAnimationFrame(rafId)
             window.removeEventListener('mousemove', onMouseMove)
             window.removeEventListener('resize', onResize)
+            envTexture.dispose()
             renderer.dispose()
             if (renderer.domElement.parentNode === container) {
                 container.removeChild(renderer.domElement)

@@ -46,9 +46,30 @@ function buildBlockGrid(container) {
     return blocks
 }
 
+/* ── Instrument Serif name — every 'a' rendered in the italic variant ── */
+function ItalicAName({ children }) {
+    return (
+        <span className="font-instrument text-xl leading-none tracking-[-0.02em] font-normal not-italic">
+            {String(children).split('').map((char, i) =>
+                char === 'a'
+                    ? <em key={i} className="italic">{char}</em>
+                    : <React.Fragment key={i}>{char}</React.Fragment>
+            )}
+        </span>
+    )
+}
+
+
 export default function Navbar({ isLoaded }) {
     const [isOpen, setIsOpen] = useState(false)
     const [hoveredIdx, setHoveredIdx] = useState(null)
+    const [isScrolled, setIsScrolled] = useState(false)
+
+    useEffect(() => {
+        const onScroll = () => setIsScrolled(window.scrollY > 40)
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
 
     /* refs for pixel-block overlay */
     const blockGridRef = useRef(null)
@@ -154,43 +175,87 @@ export default function Navbar({ isLoaded }) {
         <>
             {/* ─────────────── NAV BAR ─────────────── */}
             <motion.nav
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 30 }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: isLoaded ? 1.0 : 0 }}
-                className={`
-          sticky top-0 z-[60] flex items-center justify-between
-          px-6 md:px-16 py-6 w-full -mt-[88px]
-          mix-blend-difference text-white
-        `}
-                data-cursor="CLICK"
+                initial={{ y: 'calc(100vh - 100%)' }}
+                animate={{ y: isLoaded ? 0 : 'calc(100vh - 100%)' }}
+                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: isLoaded ? 0.8 : 0 }}
+                className="sticky top-0 z-[60] w-full -mt-[52px] mix-blend-difference text-black"
             >
-                {/* Logo */}
-                <span className="font-mono font-bold text-sm md:text-base tracking-[0.3em] uppercase opacity-90">
-                    M·HAIDER
-                </span>
+                <div className="flex items-center justify-between px-6 md:px-12 py-4 bg-white w-full">
 
-                <div className="hidden md:flex gap-10 items-center">
-                    {navLinks.map(link => (
-                        <a
-                            key={link.name}
-                            href={link.url}
-                            className="font-mono font-bold text-sm uppercase tracking-widest opacity-90 hover:opacity-100 transition-opacity duration-200"
-                        >
-                            <HoverChars stagger={0.02} duration={0.4}>{link.name}</HoverChars>
-                        </a>
-                    ))}
+                    {/* ── LEFT slot: links → name on scroll ── */}
+                    <div className="flex items-center" style={{ minWidth: 0 }}>
+                        <AnimatePresence mode="popLayout" initial={false}>
+                            {isScrolled ? (
+                                <motion.div
+                                    key="name"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                >
+                                    <div className="mix-blend-difference text-white">
+                                        <ItalicAName>Mohammad Haider</ItalicAName>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="links-left"
+                                    className="hidden md:flex items-center gap-8"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                                >
+                                    {navLinks.map(link => (
+                                        <a
+                                            key={link.name}
+                                            href={link.url}
+                                            className="font-mono text-[13px] text-black tracking-widest uppercase font-bold opacity-80 hover:opacity-100 transition-opacity duration-200"
+                                        >
+                                            <HoverChars stagger={0.02} duration={0.4}>{link.name}</HoverChars>
+                                        </a>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* ── CENTER slot: links slide in from left on scroll ── */}
+                    <div className="hidden md:flex flex-1 justify-center">
+                        <AnimatePresence>
+                            {isScrolled && (
+                                <motion.div
+                                    className="flex items-center gap-8"
+                                    initial={{ opacity: 0, x: -40 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -40 }}
+                                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                >
+                                    {navLinks.map(link => (
+                                        <a
+                                            key={link.name}
+                                            href={link.url}
+                                            className="font-mono text-[13px] text-black tracking-widest uppercase font-bold opacity-80 hover:opacity-100 transition-opacity duration-200"
+                                        >
+                                            <HoverChars stagger={0.02} duration={0.4}>{link.name}</HoverChars>
+                                        </a>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* ── RIGHT: Menu (always visible) ── */}
+                    <button
+                        onClick={openMenu}
+                        aria-label="Open menu"
+                        className="flex items-center gap-2 font-mono text-[13px] text-black tracking-widest uppercase font-bold opacity-80 hover:opacity-100 transition-opacity duration-200 outline-none"
+                    >
+                        <Menu size={14} strokeWidth={2.5} />
+                        <span className="hidden sm:inline">Menu</span>
+                    </button>
+
                 </div>
-
-                {/* Menu Button */}
-                <button
-                    onClick={openMenu}
-                    className="btn-magnetic flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 group outline-none"
-                    aria-label="Open menu"
-                >
-                    <span className="bg-slider bg-white/20 rounded-full" />
-                    <span className="btn-text font-mono font-bold text-sm uppercase tracking-widest opacity-90 group-hover:opacity-100 transition-opacity hidden sm:block">Menu</span>
-                    <Menu size={20} strokeWidth={2.5} className="btn-text opacity-90 group-hover:opacity-100 transition-all" />
-                </button>
             </motion.nav>
 
             {/* ─────────────── PIXEL-BLOCK OVERLAY (always in DOM) ─────── */}

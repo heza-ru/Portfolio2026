@@ -1,114 +1,128 @@
 import { useEffect } from 'react'
 import gsap from 'gsap'
 import { CustomEase } from 'gsap/CustomEase'
-import { SplitText } from 'gsap/SplitText'
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Binary-search the largest font-size (px) where the element fits maxWidth.
+   Temporarily expands the element to max-content so wrapping never interferes.
+   ───────────────────────────────────────────────────────────────────────────── */
+function fitToWidth(el, maxWidth) {
+    if (!el) return 16
+    const prevWidth = el.style.width
+    el.style.width = 'max-content'
+
+    let lo = 10, hi = 1200
+    while (hi - lo > 0.5) {
+        const mid = (lo + hi) / 2
+        el.style.fontSize = `${mid}px`
+        if (el.scrollWidth <= maxWidth) lo = mid
+        else hi = mid
+    }
+
+    el.style.width = prevWidth
+    el.style.fontSize = `${Math.floor(lo)}px`
+    return Math.floor(lo)
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Shared markup used in BOTH overlay layers (primary + mirror).
+   ───────────────────────────────────────────────────────────────────────────── */
+function Layers() {
+    return (
+        <>
+            <div className="pl-half pl-top">
+                <p className="pl-text pl-nice-text">Nice to meet you</p>
+            </div>
+            <div className="pl-half pl-bottom">
+                <p className="pl-text pl-im-text">I&apos;m</p>
+            </div>
+        </>
+    )
+}
 
 export default function Preloader({ onComplete }) {
     useEffect(() => {
-        gsap.registerPlugin(CustomEase, SplitText)
+        gsap.registerPlugin(CustomEase)
         CustomEase.create('hop', '.8, 0, .3, 1')
-
         document.body.style.overflow = 'hidden'
 
-        const splitTextElements = (selector, type = 'words,chars') => {
-            document.querySelectorAll(selector).forEach((el) => {
-                const split = new SplitText(el, {
-                    type,
-                    wordsClass: 'pl-word',
-                    charsClass: 'pl-char',
-                })
-                if (type.includes('chars')) {
-                    split.chars.forEach((char) => {
-                        const txt = char.textContent
-                        char.innerHTML = `<span>${txt}</span>`
-                    })
-                }
-            })
-        }
+        let tl
+        let cancelled = false
 
-        splitTextElements('.pl-intro-title h1', 'words, chars')
-        splitTextElements('.pl-tag p', 'words')
+        ;(async () => {
+            // Wait for Instrument Serif to be fully loaded before measuring
+            await document.fonts.ready
+            if (cancelled) return
 
-        // Restore visibility now that chars/words are split and the CSS
-        // transform: translateY(-100%) on inner spans keeps them hidden.
-        gsap.set(['.pl-intro-title h1', '.pl-tag p'], { visibility: 'visible' })
+            const W = window.innerWidth * 0.97 // ~1.5% breathing room each side
 
-        // Mirror overlay: pre-set all chars fully visible at rest position
-        // so both halves show the same unmodified text when the cut happens.
-        gsap.set('.pl-split-overlay .pl-intro-title .pl-char span', { y: '0%' })
+            // Fit in primary layer, then mirror all instances
+            const niceSize = fitToWidth(document.querySelector('.pl-preloader .pl-nice-text'), W)
+            const imSize   = fitToWidth(document.querySelector('.pl-preloader .pl-im-text'),   W)
 
-        const tl   = gsap.timeline({ defaults: { ease: 'hop' } })
-        const tags = gsap.utils.toArray('.pl-tag')
+            document.querySelectorAll('.pl-nice-text').forEach(el => { el.style.fontSize = `${niceSize}px` })
+            document.querySelectorAll('.pl-im-text')  .forEach(el => { el.style.fontSize = `${imSize}px`   })
 
-        // Tags slide up staggered
-        tags.forEach((tag, i) => {
-            tl.to(tag.querySelectorAll('p .pl-word'), { y: '0%', duration: 0.75 }, 0.5 + i * 0.1)
-        })
+            if (cancelled) return
 
-        tl
-            // Full "Mohammad Haider" animates in
-            .to('.pl-preloader .pl-intro-title .pl-char span', { y: '0%', duration: 0.75, stagger: 0.04 }, 0.5)
+            // Reveal all text at correct size before GSAP takes over (prevents
+            // the one-frame flash where text is briefly visible at CSS default size)
+            gsap.set('.pl-text', { visibility: 'visible' })
 
-            // Cut line sweeps left → right through the text
-            .to('.pl-cut-line', { scaleX: 1, duration: 0.55 }, 2.3)
+            // Primary layer starts below its half-section clip
+            gsap.set('.pl-preloader .pl-nice-text', { y: '140%' })
+            gsap.set('.pl-preloader .pl-im-text',   { y: '140%' })
 
-            // Clip each overlay to its half — the cut line sits at the seam
-            .set('.pl-preloader',     { clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }, 2.85)
-            .set('.pl-split-overlay', { clipPath: 'polygon(0 50%, 100% 50%, 100% 100%, 0 100%)' }, 2.85)
+            // Mirror layer: visible at resting position (im shifted down slightly)
+            gsap.set('.pl-split-overlay .pl-nice-text', { y: '0%' })
+            gsap.set('.pl-split-overlay .pl-im-text',   { y: '20%' })
 
-        // Tags exit downward
-        tags.forEach((tag, i) => {
-            tl.to(tag.querySelectorAll('p .pl-word'), { y: '100%', duration: 0.75 }, 3.1 + i * 0.1)
-        })
+            tl = gsap.timeline({ defaults: { ease: 'hop' } })
 
-        tl
-            // Cut line fades as the halves start departing
-            .to('.pl-cut-line', { opacity: 0, duration: 0.35 }, 3.6)
+            tl
+                // ── Curtain-reveal "Nice to meet you" ─────────────────────
+                .to('.pl-preloader .pl-nice-text', { y: '0%', duration: 1.3 }, 0.15)
 
-            // Split-screen departure
-            .to(
-                ['.pl-preloader', '.pl-split-overlay'],
-                {
-                    y:        (i) => (i === 0 ? '-50%' : '50%'),
-                    duration: 1,
-                    onComplete: () => {
-                        document.body.style.overflow = ''
-                        onComplete?.()
+                // ── Curtain-reveal "I'm" — lands 20% below centre ─────────
+                .to('.pl-preloader .pl-im-text',   { y: '20%', duration: 1.3 }, 0.38)
+
+                // ── Hold, then cut line sweeps ─────────────────────────────
+                .to('.pl-cut-line', { scaleX: 1, duration: 0.55 }, 2.1)
+
+                // ── Clip each overlay to its half ──────────────────────────
+                .set('.pl-preloader',     { clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }, 2.65)
+                .set('.pl-split-overlay', { clipPath: 'polygon(0 50%, 100% 50%, 100% 100%, 0 100%)' }, 2.65)
+
+                // ── Fade cut line ──────────────────────────────────────────
+                .to('.pl-cut-line', { opacity: 0, duration: 0.35 }, 3.35)
+
+                // ── Split departure ────────────────────────────────────────
+                .to(
+                    ['.pl-preloader', '.pl-split-overlay'],
+                    {
+                        y:        (i) => (i === 0 ? '-50%' : '50%'),
+                        duration: 1,
+                        ease:     'hop',
+                        onComplete: () => {
+                            document.body.style.overflow = ''
+                            onComplete?.()
+                        },
                     },
-                },
-                3.6
-            )
+                    3.35,
+                )
+        })()
 
         return () => {
-            tl.kill()
+            cancelled = true
+            tl?.kill()
             document.body.style.overflow = ''
         }
     }, [onComplete])
 
     return (
         <>
-            {/* Top overlay — animates text in and drives the cut */}
-            <div className="pl-preloader">
-                <div className="pl-intro-title">
-                    <h1>Mohammad Haider</h1>
-                </div>
-            </div>
-
-            {/* Bottom mirror — shows full text so both halves look correct at the seam */}
-            <div className="pl-split-overlay">
-                <div className="pl-intro-title">
-                    <h1>Mohammad Haider</h1>
-                </div>
-            </div>
-
-            {/* Ambient discipline tags */}
-            <div className="pl-tags-overlay">
-                <div className="pl-tag pl-tag-1"><p>Interface Architect</p></div>
-                <div className="pl-tag pl-tag-2"><p>Creative Direction</p></div>
-                <div className="pl-tag pl-tag-3"><p>Motion Systems</p></div>
-            </div>
-
-            {/* Horizontal cut line — sweeps across at the split point */}
+            <div className="pl-preloader">  <Layers /> </div>
+            <div className="pl-split-overlay"><Layers /> </div>
             <div className="pl-cut-line" />
         </>
     )

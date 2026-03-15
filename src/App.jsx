@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { ReactLenis, useLenis } from '@studio-freight/react-lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -27,17 +27,12 @@ import CustomCursor from './components/CustomCursor'
 import GlobalDigitalEffect from './components/GlobalDigitalEffect'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import About from './components/About'
-import Grid from './components/Grid'
-import Works from './components/Works'
-import Philosophy from './components/Philosophy'
-import StackingSections from './components/StackingSections'
+import WhoIAm from './components/WhoIAm'
 import ScrollProgressBar from './components/ScrollProgressBar'
-import Footer from './components/Footer'
 import Preloader from './components/Preloader'
 
 function App() {
-    const worksRef       = useRef(null)
+    
     const [loaded, setLoaded] = useState(false)
 
     useLenis(ScrollTrigger.update)
@@ -58,25 +53,7 @@ function App() {
                 <main className="relative z-10">
                     <Hero isLoaded={loaded} />
                     <Navbar isLoaded={loaded} />
-
-                    {/*
-                      * About + Grid stack via GSAP pin (pinSpacing:false).
-                      * nextSectionRef points to the Works wrapper so Grid's
-                      * pin releases — and Grid's stacking animation fires —
-                      * exactly when Works reaches the viewport top.
-                      * Works is outside StackingSections so its own
-                      * ScrollTrigger measures a clean, undisturbed layout.
-                      */}
-                    <StackingSections nextSectionRef={worksRef}>
-                        <About />
-                        <Grid />
-                    </StackingSections>
-
-                    <div ref={worksRef}>
-                        <Works />
-                    </div>
-                    <Philosophy />
-                    <Footer />
+                    <WhoIAm />
                 </main>
             </div>
         </ReactLenis>

@@ -69,7 +69,7 @@ const config = {
     lerpFactor:            0.035,
     parallaxStrength:      0.1,
     distortionMultiplier:  10.0,
-    glassStrength:         2.0,
+    glassStrength:         1.0,
     glassSmoothness:       0.0001,
     stripesFrequency:      35.0,
     edgePadding:           0.1,

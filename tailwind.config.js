@@ -16,6 +16,8 @@ export default {
                 drama: ['"Cormorant Garamond"', 'serif'],
                 mono: ['"IBM Plex Mono"', 'monospace'],
                 body: ['Satoshi', 'sans-serif'],
+                instrument: ['"Instrument Serif"', 'serif'],
+                dm: ['Inter', 'sans-serif'],
             }
         },
     },
