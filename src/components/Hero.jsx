@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useScroll, useTransform, motion } from 'framer-motion'
 import HeroModel from './HeroModel'
 
@@ -14,17 +14,59 @@ function ItalicAName({ children, className = '' }) {
     )
 }
 
+/* Binary-search font size so el fills targetWidth on one line */
+function fitToWidth(el, targetWidth) {
+    const prev = el.style.whiteSpace
+    el.style.whiteSpace = 'nowrap'
+    let lo = 10, hi = 400
+    for (let i = 0; i < 22; i++) {
+        const mid = (lo + hi) / 2
+        el.style.fontSize = `${mid}px`
+        el.scrollWidth <= targetWidth ? (lo = mid) : (hi = mid)
+    }
+    el.style.whiteSpace = prev
+    return lo
+}
+
 export default function Hero({ isLoaded }) {
-    const container = useRef(null)
+    const container    = useRef(null)
+    const mohammadRef  = useRef(null)
+    const haiderRef    = useRef(null)
+
     const { scrollYProgress } = useScroll({
         target: container,
         offset: ['start start', 'end start'],
     })
 
-    // Parallax layers
-    const yBg = useTransform(scrollYProgress, [0, 1], ['0%', '15%'])
-    const yTextBack = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
+    const yBg        = useTransform(scrollYProgress, [0, 1], ['0%', '15%'])
+    const yTextBack  = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
     const yTextFront = useTransform(scrollYProgress, [0, 1], ['0%', '-15%'])
+
+    /* ── Mobile-only: fit each name to full viewport width ── */
+    useEffect(() => {
+        function sizeNames() {
+            const isMobile = window.innerWidth < 768
+            const m = mohammadRef.current
+            const h = haiderRef.current
+            if (!m || !h) return
+
+            if (isMobile) {
+                const vw = window.innerWidth * 0.96  // 2% pad each side
+                document.fonts.ready.then(() => {
+                    fitToWidth(m, vw)
+                    fitToWidth(h, vw)
+                })
+            } else {
+                // Reset to CSS clamp on desktop
+                m.style.fontSize = ''
+                h.style.fontSize = ''
+            }
+        }
+
+        sizeNames()
+        window.addEventListener('resize', sizeNames, { passive: true })
+        return () => window.removeEventListener('resize', sizeNames)
+    }, [])
 
     return (
         <>
@@ -33,22 +75,23 @@ export default function Hero({ isLoaded }) {
                 ref={container}
                 className="relative sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]"
             >
-                {/* ── Back name: Mohammad — Layer 1 (behind portrait) ── */}
+                {/* ── Back name: Mohammad ── */}
                 <motion.div
                     style={{ y: yTextBack }}
-                    className="absolute z-[5] left-[4%] md:left-[8%] top-[30%] pointer-events-none mix-blend-difference"
+                    className="absolute z-[5] left-[2%] md:left-[8%] top-[28%] md:top-[30%] pointer-events-none mix-blend-difference"
                 >
                     <motion.h1
                         initial={{ x: '-40%', opacity: 0 }}
                         animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
                         transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                        ref={mohammadRef}
                         className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none"
                     >
                         <ItalicAName>Mohammad</ItalicAName>
                     </motion.h1>
                 </motion.div>
 
-                {/* ── Layer 0: Full-screen 3D hero model ── */}
+                {/* ── 3D model ── */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={isLoaded ? { opacity: 1 } : {}}
@@ -59,15 +102,16 @@ export default function Hero({ isLoaded }) {
                     <HeroModel />
                 </motion.div>
 
-                {/* ── Front name: Haider — Layer 4 (in front of portrait) ── */}
+                {/* ── Front name: Haider ── */}
                 <motion.div
                     style={{ y: yTextFront }}
-                    className="absolute z-[15] right-[4%] md:right-[8%] top-[50%] pointer-events-none mix-blend-difference"
+                    className="absolute z-[15] right-[2%] md:right-[8%] top-[50%] md:top-[50%] pointer-events-none mix-blend-difference"
                 >
                     <motion.h1
                         initial={{ x: '40%', opacity: 0 }}
                         animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
                         transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+                        ref={haiderRef}
                         className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none text-right"
                     >
                         <ItalicAName>Haider</ItalicAName>
@@ -75,7 +119,6 @@ export default function Hero({ isLoaded }) {
                 </motion.div>
             </section>
 
-            {/* ── Sentinel: Navbar IntersectionObserver watches this ── */}
             <div id="hero-sentinel" className="h-px w-full bg-transparent" aria-hidden="true" />
         </>
     )

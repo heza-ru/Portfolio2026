@@ -29,6 +29,7 @@ import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import WhoIAm from './components/WhoIAm'
 import Works from './components/Works'
+import Footer from './components/Footer'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import Preloader from './components/Preloader'
 
@@ -56,6 +57,7 @@ function App() {
                     <Navbar isLoaded={loaded} />
                     <WhoIAm />
                     <Works />
+                    <Footer />
                 </main>
             </div>
         </ReactLenis>

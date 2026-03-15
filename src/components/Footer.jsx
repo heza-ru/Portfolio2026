@@ -1,67 +1,262 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
+import Matter from 'matter-js'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import gsap from 'gsap'
 import HoverChars from './HoverChars'
 
+/* Italic every 'a' — same pattern as hero title */
+function ItalicA({ children }) {
+    return (
+        <span className="font-instrument font-normal not-italic">
+            {String(children).split('').map((ch, i) =>
+                ch === 'a'
+                    ? <em key={i} className="italic">{ch}</em>
+                    : <React.Fragment key={i}>{ch}</React.Fragment>
+            )}
+        </span>
+    )
+}
+
+/* ── Physics blocks — [width, height] pairs, no text ───────────────────── */
+const BLOCKS_DESKTOP = [
+    [220, 80], [140, 140], [300, 70],
+    [260, 90], [120, 120], [340, 80],
+    [200, 70], [160, 160], [110, 110],
+    [80,  80], [190, 65],
+]
+
+const BLOCKS_MOBILE = [
+    [130, 55], [90, 90],  [160, 50],
+    [100, 70], [75, 75],  [140, 55],
+    [80,  80], [110, 50],
+]
+
+const LINKS = {
+    quick: [
+        { label: 'Home',    href: '#' },
+        { label: 'Resume',  href: '#' },
+        { label: 'Works',   href: '#' },
+        { label: 'Contact', href: '#' },
+    ],
+    networks: [
+        { label: 'LinkedIn',  href: '#' },
+        { label: 'Instagram', href: '#' },
+        { label: 'Behance',   href: '#' },
+        { label: 'GitHub',    href: '#' },
+    ],
+}
+
+const isMobile = () => window.innerWidth < 768
+
 export default function Footer() {
-    const footerRef = useRef(null)
-    const [time, setTime] = useState(new Date())
+    const sectionRef   = useRef(null)
+    const containerRef = useRef(null)
+    const engineRef    = useRef(null)
+    const runnerRef    = useRef(null)
+    const rafRef       = useRef(null)
+    const bodiesRef    = useRef([])
 
     useEffect(() => {
-        const timer = setInterval(() => setTime(new Date()), 1000)
-        return () => clearInterval(timer)
+        const section   = sectionRef.current
+        const container = containerRef.current
+        if (!section || !container) return
+
+        /* ── Navbar fade-out as footer enters ───────────────────────────────
+           Fades the navbar to invisible as the footer scrolls into view,
+           then restores it when scrolling back up.                         */
+        const navbar = document.querySelector('nav')
+        let navST = null
+        if (navbar) {
+            navST = gsap.to(navbar, {
+                opacity: 0,
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: section,
+                    start:   'top 80%',   // start fading when footer is near
+                    end:     'top 20%',   // fully gone before footer top hits
+                    scrub:   true,
+                    invalidateOnRefresh: true,
+                },
+            })
+        }
+
+        let initiated = false
+
+        function initPhysics() {
+            if (initiated) return
+            initiated = true
+
+            const { width, height } = container.getBoundingClientRect()
+            const T = 200
+
+            /* Stronger solver = far fewer overlapping bodies */
+            const engine = Matter.Engine.create({
+                positionIterations:   20,
+                velocityIterations:   16,
+                constraintIterations: 12,
+            })
+            engine.gravity          = { x: 0, y: 1.2 }
+            engine.timing.timeScale = 0.85   // slight slow-mo helps settle cleanly
+            engineRef.current = engine
+
+            /* ── Walls (bottom + left + right) ── */
+            Matter.World.add(engine.world, [
+                Matter.Bodies.rectangle(width / 2,     height + T / 2, width + T * 2, T, { isStatic: true }),
+                Matter.Bodies.rectangle(-T / 2,        height / 2,     T, height + T * 2, { isStatic: true }),
+                Matter.Bodies.rectangle(width + T / 2, height / 2,     T, height + T * 2, { isStatic: true }),
+            ])
+
+            /* ── Staggered block drops ───────────────────────────────────────
+               Blocks are added 120 ms apart so each one has space to land
+               before the next arrives — prevents the pile-up / overlap glitch. */
+            const elements = Array.from(container.querySelectorAll('.ft-block'))
+            const timeouts = []
+
+            elements.forEach((el, i) => {
+                const w = parseInt(el.dataset.w)
+                const h = parseInt(el.dataset.h)
+                // Distribute start X evenly across width to prevent clustering
+                const col    = i % 4
+                const colW   = width / 4
+                const startX = colW * col + colW / 2 + (Math.random() - 0.5) * colW * 0.5
+                const startY = -h - 40
+                const angle  = (Math.random() - 0.5) * Math.PI * 0.4
+
+                const tid = setTimeout(() => {
+                    const body = Matter.Bodies.rectangle(startX, startY, w, h, {
+                        restitution: 0.25,   // less bounce → less chaos
+                        friction:    0.4,
+                        frictionAir: 0.04,
+                        density:     0.003,
+                        slop:        0.5,    // extra separation gap
+                    })
+                    Matter.Body.setAngle(body, angle)
+                    bodiesRef.current.push({ body, el, w, h })
+                    Matter.World.add(engine.world, body)
+                }, i * 120)
+
+                timeouts.push(tid)
+            })
+
+            /* ── Top wall closes after blocks have settled ── */
+            const topWallTid = setTimeout(() => {
+                Matter.World.add(engine.world,
+                    Matter.Bodies.rectangle(width / 2, -T / 2, width + T * 2, T, { isStatic: true })
+                )
+            }, elements.length * 120 + 2000)
+
+            timeouts.push(topWallTid)
+
+            /* ── Mouse drag ── */
+            const mouse = Matter.Mouse.create(container)
+            mouse.element.removeEventListener('mousewheel',     mouse.mousewheel)
+            mouse.element.removeEventListener('DOMMouseScroll', mouse.mousewheel)
+
+            const mc = Matter.MouseConstraint.create(engine, {
+                mouse,
+                constraint: { stiffness: 0.6, render: { visible: false } },
+            })
+
+            let dragging = null, origInertia = null
+            Matter.Events.on(mc, 'startdrag', e => {
+                dragging = e.body
+                if (dragging) { origInertia = dragging.inertia; Matter.Body.setInertia(dragging, Infinity) }
+            })
+            Matter.Events.on(mc, 'enddrag', () => {
+                if (dragging) { Matter.Body.setInertia(dragging, origInertia || 1); dragging = null }
+            })
+            container.addEventListener('mouseleave', () => {
+                mc.constraint.bodyB = mc.constraint.pointB = null
+            })
+            document.addEventListener('mouseup', () => {
+                mc.constraint.bodyB = mc.constraint.pointB = null
+            })
+
+            Matter.World.add(engine.world, mc)
+
+            runnerRef.current = Matter.Runner.create()
+            Matter.Runner.run(runnerRef.current, engine)
+
+            /* ── Sync DOM → physics each frame ── */
+            function sync() {
+                bodiesRef.current.forEach(({ body, el, w, h }) => {
+                    const x = Math.max(0, Math.min(body.position.x - w / 2, width  - w))
+                    const y = Math.max(-h * 3, Math.min(body.position.y - h / 2, height - h))
+                    el.style.left      = `${x}px`
+                    el.style.top       = `${y}px`
+                    el.style.transform = `rotate(${body.angle}rad)`
+                })
+                rafRef.current = requestAnimationFrame(sync)
+            }
+            sync()
+        }
+
+        /* ── Start physics when section enters viewport ── */
+        const st = ScrollTrigger.create({
+            trigger: section,
+            start:   'top bottom',
+            once:    true,
+            onEnter: initPhysics,
+        })
+
+        return () => {
+            st.kill()
+            if (navST) navST.scrollTrigger?.kill()
+            cancelAnimationFrame(rafRef.current)
+            if (runnerRef.current) Matter.Runner.stop(runnerRef.current)
+            if (engineRef.current) Matter.Engine.clear(engineRef.current)
+            bodiesRef.current = []
+        }
+        // timeouts array is local to initPhysics — cleared by engine.clear on unmount
     }, [])
 
     return (
-        <footer ref={footerRef} className="relative z-10 h-[30dvh] w-full bg-[#F0EDE8] text-[#0A0A0A] rounded-t-[3rem] md:rounded-t-[4rem] overflow-hidden border-t border-black/5 flex flex-col">
+        <footer ref={sectionRef} className="ft-footer">
 
-            {/* Background grain */}
-            <div className="absolute inset-0 opacity-[0.04] pointer-events-none mix-blend-overlay bg-[url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center grayscale" />
-
-            <div className="relative z-10 flex-1 flex flex-col justify-between px-8 md:px-20 py-6 md:py-8">
-
-                {/* Top row: brand + links */}
-                <div className="flex items-start justify-between gap-8">
-
-                    {/* Brand */}
-                    <div className="flex flex-col gap-1">
-                        <h2 className="font-heading text-2xl md:text-3xl uppercase tracking-tight">Mohammad Haider</h2>
-                        <p className="font-drama italic text-sm md:text-base text-accent opacity-80">
-                            Designing digital systems that refuse to be ignored.
-                        </p>
-                    </div>
-
-                    {/* Links — hidden on small screens to avoid overflow */}
-                    <div className="hidden md:flex gap-12 font-mono text-xs uppercase tracking-widest opacity-70">
-                        <div className="flex flex-col gap-2">
-                            {['Index', 'About', 'Works', 'Philosophy'].map(link => (
-                                <a key={link} href="#" className="hover:text-accent transition-colors w-fit">
-                                    <HoverChars stagger={0.025} duration={0.4}>{link}</HoverChars>
-                                </a>
-                            ))}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {['GitHub', 'LinkedIn', 'Twitter', 'Email'].map(link => (
-                                <a key={link} href="#" className="hover:text-accent transition-colors w-fit">
-                                    <HoverChars stagger={0.025} duration={0.4}>{link}</HoverChars>
-                                </a>
-                            ))}
-                        </div>
+            {/* ── Top bar ──────────────────────────────────────────────── */}
+            <div className="ft-bar">
+                <div className="ft-bar-col">
+                    <p className="ft-bar-label">Quick Links</p>
+                    <div className="ft-bar-links">
+                        {LINKS.quick.map(l => (
+                            <a key={l.label} href={l.href} className="ft-bar-link">
+                                <HoverChars stagger={0.025} duration={0.45}>{l.label}</HoverChars>
+                            </a>
+                        ))}
                     </div>
                 </div>
 
-                {/* Bottom bar */}
-                <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest opacity-50 border-t border-black/10 pt-3">
-                    <div className="flex items-center gap-2">
-                        <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-                        </span>
-                        <span>System Online</span>
+                <div className="ft-bar-col ft-bar-col--right">
+                    <p className="ft-bar-label">Networks</p>
+                    <div className="ft-bar-links">
+                        {LINKS.networks.map(l => (
+                            <a key={l.label} href={l.href} className="ft-bar-link">
+                                <HoverChars stagger={0.025} duration={0.45}>{l.label}</HoverChars>
+                            </a>
+                        ))}
                     </div>
-                    <span>© 2026 Mohammad Haider</span>
-                    <span className="hidden md:inline">{time.toLocaleTimeString()}</span>
                 </div>
-
             </div>
+
+            {/* ── Physics playground ───────────────────────────────────── */}
+            <div ref={containerRef} className="ft-physics">
+                {(isMobile() ? BLOCKS_MOBILE : BLOCKS_DESKTOP).map(([w, h], i) => (
+                    <div
+                        key={i}
+                        className="ft-block"
+                        data-w={w}
+                        data-h={h}
+                        style={{ width: w, height: h }}
+                    />
+                ))}
+            </div>
+
+            {/* ── Large name text ──────────────────────────────────────── */}
+            <div className="ft-name" aria-hidden="true">
+                <span className="ft-name-copy">©</span>
+                <span className="ft-name-title"><ItalicA>Haider</ItalicA></span>
+            </div>
+
         </footer>
     )
 }
