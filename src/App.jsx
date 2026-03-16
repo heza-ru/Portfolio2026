@@ -32,6 +32,7 @@ import Works from './components/Works'
 import Footer from './components/Footer'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import Preloader from './components/Preloader'
+import IdleOverlay from './components/IdleOverlay'
 
 /* Detected once at module load — avoids re-checking on every render. */
 const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
@@ -127,6 +128,7 @@ function App() {
                     <GlobalDigitalEffect />
 
                     <ScrollProgressBar />
+                    <IdleOverlay />
 
                     <main className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
                         <Hero isLoaded={loaded} />
