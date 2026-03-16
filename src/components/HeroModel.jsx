@@ -25,19 +25,22 @@ export default function HeroModel({ className = '' }) {
         camera.position.set(0, 0, 5)
 
         // ── Renderer ────────────────────────────────────────────────────────
-        // Mobile: skip antialias + lower precision → ~40 % less GPU work.
-        // Cap pixel ratio at 1 on mobile (1.5 on desktop) — the model is
-        // small enough that the difference is imperceptible on a phone screen.
+        // Always use highp — mediump lacks the float precision needed by
+        // PMREMGenerator and produces an all-black environment texture on
+        // most mobile GPUs, making the glass model invisible.
+        // Mobile savings come from skipping antialias + capping pixel ratio at 1.
         const renderer = new THREE.WebGLRenderer({
             antialias: !IS_MOBILE,
             alpha:     false,
-            precision: IS_MOBILE ? 'mediump' : 'highp',
+            precision: 'highp',
         })
         renderer.setSize(w, h)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1 : 1.5))
         renderer.outputColorSpace    = THREE.SRGBColorSpace
         renderer.toneMapping         = THREE.ACESFilmicToneMapping
-        renderer.toneMappingExposure = 0.85
+        // Slightly higher exposure on mobile so the model reads clearly on
+        // small screens even if the environment map is weaker than on desktop.
+        renderer.toneMappingExposure = IS_MOBILE ? 1.1 : 0.85
         container.appendChild(renderer.domElement)
 
         // ── Environment map (glass needs IBL to refract/reflect) ────────────
@@ -47,14 +50,17 @@ export default function HeroModel({ className = '' }) {
         scene.environment = envTexture
         pmrem.dispose()
 
-        // ── Lights (env map carries the glass; direct lights add edge detail) ─
-        scene.add(new THREE.AmbientLight(0xffffff, 0.10))
+        // ── Lights ─────────────────────────────────────────────────────────
+        // Mobile gets stronger direct lights to compensate for any env-map
+        // weakness on lower-end GPUs (even with highp, some devices render
+        // the PMREM result at reduced quality).
+        scene.add(new THREE.AmbientLight(0xffffff, IS_MOBILE ? 0.6 : 0.10))
 
-        const keyLight = new THREE.DirectionalLight(0xffffff, 0.9)
+        const keyLight = new THREE.DirectionalLight(0xffffff, IS_MOBILE ? 1.8 : 0.9)
         keyLight.position.set(-2, 5, 3)
         scene.add(keyLight)
 
-        const rimLight = new THREE.DirectionalLight(0xaabbff, 0.5)
+        const rimLight = new THREE.DirectionalLight(0xaabbff, IS_MOBILE ? 1.0 : 0.5)
         rimLight.position.set(3, 3, -5)
         scene.add(rimLight)
 
