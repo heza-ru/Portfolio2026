@@ -89,11 +89,12 @@ export default function Footer() {
             const { width, height } = container.getBoundingClientRect()
             const T = 200
 
-            /* Stronger solver = far fewer overlapping bodies */
+            /* Fewer blocks on mobile → lower solver cost is sufficient. */
+            const mobile = isMobile()
             const engine = Matter.Engine.create({
-                positionIterations:   20,
-                velocityIterations:   16,
-                constraintIterations: 12,
+                positionIterations:   mobile ? 10 : 20,
+                velocityIterations:   mobile ?  8 : 16,
+                constraintIterations: mobile ?  6 : 12,
             })
             engine.gravity          = { x: 0, y: 1.2 }
             engine.timing.timeScale = 0.85   // slight slow-mo helps settle cleanly

@@ -17,7 +17,6 @@ export default function GlobalGrain() {
                     opacity: 0.18,
                     pointerEvents: 'none',
                     mixBlendMode: 'overlay',
-                    willChange: 'transform',
                 }}
             >
                 <svg
@@ -52,7 +51,6 @@ export default function GlobalGrain() {
                     opacity: 0.08,
                     pointerEvents: 'none',
                     mixBlendMode: 'screen',
-                    willChange: 'transform',
                 }}
             >
                 <svg

@@ -7,16 +7,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mohammad Haider</title>
 
-    <!-- Google Fonts -->
+    <!-- DNS prefetch for external font origins -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://api.fontshare.com">
+
+    <!-- Early connections to font origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+
+    <!--
+      Load only the weights we actually use.
+      Instrument Serif: 400 regular + 400 italic (hero title, preloader, bio text)
+      IBM Plex Mono: 400 only (used sparingly)
+      Removed Cormorant Garamond + Inter — not referenced in current components.
+    -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@700;900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Instrument+Serif:ital@0;1&display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;1,400&family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet">
 
-    <!-- Fontshare Fonts -->
+    <!-- Fontshare: Clash Display (headers) + Satoshi (body) -->
     <link
-        href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700,900&display=swap"
+        href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@400,500,700&display=swap"
         rel="stylesheet">
 </head>
 

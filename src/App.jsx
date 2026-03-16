@@ -33,34 +33,57 @@ import Footer from './components/Footer'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import Preloader from './components/Preloader'
 
-function App() {
-    
-    const [loaded, setLoaded] = useState(false)
+/* Detected once at module load — avoids re-checking on every render. */
+const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
 
+/* Sync Lenis ticks with ScrollTrigger — only needed inside ReactLenis tree. */
+function LenisScrollTriggerSync() {
     useLenis(ScrollTrigger.update)
+    return null
+}
+
+function App() {
+    const [loaded, setLoaded] = useState(false)
 
     return (
         <>
             {/* Preloader sits outside Lenis so scroll is locked during the animation */}
             {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
 
-        <ReactLenis root>
-            <div className="min-h-screen text-[#F0EDE8] bg-[#0A0A0A] font-body relative">
-                <GlobalGrain />
-                <CustomCursor />
-                <GlobalDigitalEffect />
+            {/*
+             * On mobile we skip Lenis entirely — native momentum scroll is
+             * smoother and avoids the double-scroll jank that can occur when
+             * Lenis intercepts touch events alongside iOS rubber-banding.
+             */}
+            <ReactLenis
+                root
+                options={{
+                    smoothWheel: !IS_MOBILE,
+                    duration:    IS_MOBILE ? 0 : 1.2,
+                    smoothTouch: false,
+                    syncTouch:   false,
+                }}
+            >
+                {/* Sync Lenis scroll ticks → ScrollTrigger updates */}
+                {!IS_MOBILE && <LenisScrollTriggerSync />}
 
-                <ScrollProgressBar />
+                <div className="min-h-screen text-[#F0EDE8] bg-[#0A0A0A] font-body relative">
+                    {/* Heavy fixed overlays — skipped on mobile to save GPU/CPU */}
+                    {!IS_MOBILE && <GlobalGrain />}
+                    <CustomCursor />
+                    <GlobalDigitalEffect />
 
-                <main className="relative z-10">
-                    <Hero isLoaded={loaded} />
-                    <Navbar isLoaded={loaded} />
-                    <WhoIAm />
-                    <Works />
-                    <Footer />
-                </main>
-            </div>
-        </ReactLenis>
+                    <ScrollProgressBar />
+
+                    <main className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
+                        <Hero isLoaded={loaded} />
+                        <Navbar isLoaded={loaded} />
+                        <WhoIAm />
+                        <Works />
+                        <Footer />
+                    </main>
+                </div>
+            </ReactLenis>
         </>
     )
 }

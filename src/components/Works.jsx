@@ -4,55 +4,66 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 /* ─────────────────────────────────────────────────────────────────────────
    PROJECT DATA
-   To add a real project:
-     1. Drop your image  into  public/works/<name>.jpg
-     2. Drop your gif    into  public/works/<name>.gif
-     3. Update the `image`, `gif`, and `link` fields below.
+   Fields:
+     image / gif  — URL (external or public/works/<name>.jpg)
+     comingSoon   — shows an overlay instead of linking out
    ──────────────────────────────────────────────────────────────────────── */
 const WORKS = [
     {
         id: 1,
-        title: 'TrackStack',
-        category: 'Product',
+        title: 'Tuneminal',
+        category: 'CLI · Go',
         year: '2025',
-        image: 'https://picsum.photos/seed/ts1/900/675',
-        gif:   'https://picsum.photos/seed/ts1a/900/675',   // replace with real .gif
-        link:  '#',
+        description: 'A lightweight open-source karaoke machine for your terminal — play songs, follow scrolling lyrics, and sing from the command line. Built with real-time audio visualisation and karaoke scoring.',
+        image: 'https://opengraph.githubassets.com/tuneminal/heza-ru/Tuneminal',
+        gif:   'https://opengraph.githubassets.com/tuneminal-hover/heza-ru/Tuneminal',
+        link:  'https://github.com/heza-ru/Tuneminal',
+        comingSoon: false,
     },
     {
         id: 2,
-        title: 'Portfolio',
-        category: 'Design',
+        title: 'Netstalgia',
+        category: 'Web · Next.js',
         year: '2025',
-        image: 'https://picsum.photos/seed/pf2/900/675',
-        gif:   'https://picsum.photos/seed/pf2a/900/675',
-        link:  '#',
+        description: 'A lovingly cursed 90s-style web app that loads like dial-up. Complete with pixel-art loading bars, pop-up ads, a guestbook, Windows 95 desktop, and the iconic dancing baby GIF.',
+        image: 'https://raw.githubusercontent.com/heza-ru/Netstalgia/main/public/assets/screenshots/nsdesktopscreen.png',
+        gif:   'https://raw.githubusercontent.com/heza-ru/Netstalgia/main/public/assets/screenshots/nswebpageabout.png',
+        link:  'https://netstalgia.netlify.app',
+        comingSoon: false,
     },
     {
         id: 3,
-        title: 'Brand System',
-        category: 'Branding',
-        year: '2024',
-        image: 'https://picsum.photos/seed/bs3/900/675',
-        gif:   'https://picsum.photos/seed/bs3a/900/675',
-        link:  '#',
+        title: 'CallScribe',
+        category: 'Extension · React',
+        year: '2025',
+        description: 'A Chromium browser extension that extracts Mindtickle call transcripts and converts them into structured JIRA tickets and Productboard insights via Claude AI — with one click.',
+        image: 'https://opengraph.githubassets.com/callscribe/heza-ru/CallScribe',
+        gif:   'https://opengraph.githubassets.com/callscribe-hover/heza-ru/CallScribe',
+        link:  'https://github.com/heza-ru/CallScribe',
+        comingSoon: false,
     },
     {
         id: 4,
-        title: 'Dashboard',
-        category: 'Engineering',
-        year: '2024',
-        image: 'https://picsum.photos/seed/db4/900/675',
-        gif:   'https://picsum.photos/seed/db4a/900/675',
-        link:  '#',
+        title: 'Project Localhost',
+        category: 'Infrastructure · RPi',
+        year: '2026',
+        description: 'A Raspberry Pi 5 local infrastructure stack running DNS resolution, home automation, and a fully self-hosted LLM — entirely on your own hardware, zero cloud dependency.',
+        image: 'https://opengraph.githubassets.com/localhost/heza-ru/Project-Localhost',
+        gif:   'https://opengraph.githubassets.com/localhost/heza-ru/Project-Localhost',
+        link:  'https://github.com/heza-ru/Project-Localhost',
+        comingSoon: true,
     },
 ]
 
 /* ── 3-D tilt helpers ───────────────────────────────────────────────────── */
 const lerp = (a, b, t) => a + (b - a) * t
+const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
 
 function useTilt(ref) {
     useEffect(() => {
+        /* No mouse on touch devices — skip the RAF loop entirely. */
+        if (IS_MOBILE) return
+
         const el = ref.current
         if (!el) return
 
@@ -80,8 +91,6 @@ function useTilt(ref) {
         function onLeave() {
             cancelAnimationFrame(raf)
             tx = 0; ty = 0
-            // ease back to flat
-            let steps = 0
             function easeOut() {
                 cx = lerp(cx, 0, 0.12)
                 cy = lerp(cy, 0, 0.12)
@@ -108,6 +117,22 @@ function useTilt(ref) {
     }, [])
 }
 
+/* ── Marquee strip ──────────────────────────────────────────────────────── */
+function Marquee({ text }) {
+    /* Two identical spans inside a flex track.
+       The animation translates the track by -50% (= exactly one span width),
+       then instantly resets to 0 — creating a seamless infinite loop.        */
+    const copy = `${text}   ·   `
+    return (
+        <div className="works-marquee-wrap" aria-hidden="true">
+            <div className="works-marquee-track">
+                <span>{copy}</span>
+                <span>{copy}</span>
+            </div>
+        </div>
+    )
+}
+
 /* ── Single polaroid card ───────────────────────────────────────────────── */
 function PolaroidCard({ work, column }) {
     const [hovered, setHovered] = useState(false)
@@ -115,30 +140,38 @@ function PolaroidCard({ work, column }) {
 
     useTilt(cardRef)
 
+    const Tag = work.comingSoon ? 'div' : 'a'
+    const linkProps = work.comingSoon
+        ? {}
+        : { href: work.link, target: '_blank', rel: 'noopener noreferrer' }
+
     return (
-        /* Outer wrapper handles GSAP parallax translate-Y.
-           Inner wrapper (cardRef) handles the 3-D tilt so the two
-           transforms don't clobber each other.                      */
         <div className={`works-polaroid-wrap works-polaroid-wrap--${column}`}>
-            <a
+            <Tag
                 ref={cardRef}
-                href={work.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="works-polaroid"
+                {...linkProps}
+                className={`works-polaroid${work.comingSoon ? ' works-polaroid--soon' : ''}`}
                 style={{ transformStyle: 'preserve-3d' }}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
             >
                 <div className="works-polaroid-img">
-                    {/* Inner wrapper receives the scroll parallax y-shift */}
                     <div className="works-polaroid-img-inner">
                         <img
                             src={hovered && work.gif ? work.gif : work.image}
                             alt={work.title}
                             draggable="false"
+                            loading="lazy"
+                            decoding="async"
                         />
                     </div>
+
+                    {/* Coming-soon overlay sits above the image */}
+                    {work.comingSoon && (
+                        <div className="works-polaroid-soon-overlay">
+                            <span>Coming Soon</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="works-polaroid-caption">
@@ -146,7 +179,10 @@ function PolaroidCard({ work, column }) {
                     <span className="works-polaroid-cat">{work.category} · {work.year}</span>
                 </div>
 
-            </a>
+                {/* Scrolling description marquee */}
+                <Marquee text={work.description} />
+
+            </Tag>
         </div>
     )
 }
@@ -156,6 +192,37 @@ export default function Works() {
     const containerRef = useRef(null)
 
     useEffect(() => {
+        /* ── Marquee — GSAP-driven so it isn't blocked by the global
+           prefers-reduced-motion CSS override (animation-duration:0.001ms)  */
+        const marqueeKills = []
+        document.querySelectorAll('.works-marquee-track').forEach(track => {
+            /* Wait one frame so the DOM has painted and scrollWidth is correct */
+            requestAnimationFrame(() => {
+                const spanW = track.children[0]?.scrollWidth
+                if (!spanW) return
+
+                const tween = gsap.fromTo(track,
+                    { x: 0 },
+                    { x: -spanW, duration: 18, ease: 'none', repeat: -1 }
+                )
+
+                /* Pause / resume on pointer enter / leave */
+                const card = track.closest('.works-polaroid')
+                if (card) {
+                    const pause  = () => tween.pause()
+                    const resume = () => tween.play()
+                    card.addEventListener('mouseenter', pause)
+                    card.addEventListener('mouseleave', resume)
+                    marqueeKills.push(() => {
+                        card.removeEventListener('mouseenter', pause)
+                        card.removeEventListener('mouseleave', resume)
+                    })
+                }
+
+                marqueeKills.push(() => tween.kill())
+            })
+        })
+
         const ctx = gsap.context(() => {
 
             /* ── Card parallax (desktop only) ───────────────────────────────── */
@@ -181,8 +248,7 @@ export default function Works() {
 
             /* ── Image inner parallax ───────────────────────────────────────────
                The inner wrapper (not the img itself) gets the y shift so it
-               never conflicts with GSAP's own transform on the img element.
-               ±50px travel is large enough to be clearly visible.             */
+               never conflicts with GSAP's own transform on the img element.  */
             document.querySelectorAll('.works-polaroid-img-inner').forEach(inner => {
                 gsap.fromTo(inner,
                     { y: 100 },
@@ -202,7 +268,10 @@ export default function Works() {
 
         }, containerRef)
 
-        return () => ctx.revert()
+        return () => {
+            ctx.revert()
+            marqueeKills.forEach(fn => fn())
+        }
     }, [])
 
     return (

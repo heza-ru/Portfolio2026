@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
+const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
+
 const BIO = 'A multidisciplinary engineer, designer and consultant — passionate about merging design and engineering to craft smooth, interactive experiences. Building digital products with a focus on motion, performance, and lasting purpose.'
 
 /* Binary-search the largest font size (px) where el renders ≤ targetWidth
@@ -126,13 +128,14 @@ export default function WhoIAm() {
                 })
             }
 
-            /* ── 4. Parallax — eyebrow drifts slower, text moves faster ─────────
-               The section is the trigger for both. Eyebrow gets a gentle upward
-               drift (+y → -y), text gets a stronger one so it feels quicker.   */
+            /* ── 4. Parallax — eyebrow only, and only on desktop ────────────────
+               On mobile the y: 200 → -250 on textWrapEl shifts it below the
+               natural DOM position, which creates a visible gap between sections.
+               Eyebrow parallax is safe (no effect on clip-path position).       */
             const eyebrowEl  = document.querySelector('.wia-eyebrow')
             const textWrapEl = document.querySelector('.wia-text-wrap')
 
-            if (eyebrowEl) {
+            if (eyebrowEl && !IS_MOBILE) {
                 gsap.fromTo(eyebrowEl,
                     { y: 80 },
                     {
@@ -149,7 +152,9 @@ export default function WhoIAm() {
                 )
             }
 
-            if (textWrapEl) {
+            /* Text wrap parallax only on desktop — on mobile the 200 px initial
+               offset creates a visible gap between sections when overflowing    */
+            if (textWrapEl && !IS_MOBILE) {
                 gsap.fromTo(textWrapEl,
                     { y: 200 },
                     {

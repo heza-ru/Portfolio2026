@@ -42,7 +42,7 @@ export default function Hero({ isLoaded }) {
     const yTextBack  = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
     const yTextFront = useTransform(scrollYProgress, [0, 1], ['0%', '-15%'])
 
-    /* ── Mobile-only: fit each name to full viewport width ── */
+    /* ── Mobile-only: fit each name to fill the viewport width ── */
     useEffect(() => {
         function sizeNames() {
             const isMobile = window.innerWidth < 768
@@ -51,7 +51,10 @@ export default function Hero({ isLoaded }) {
             if (!m || !h) return
 
             if (isMobile) {
-                const vw = window.innerWidth * 0.96  // 2% pad each side
+                // 92 % of vw: the wrapper sits at left/right 2%, so we subtract
+                // that offset (4 % total) plus a 4 % safety margin for italic
+                // character overhang and sub-pixel rounding.
+                const vw = window.innerWidth * 0.92
                 document.fonts.ready.then(() => {
                     fitToWidth(m, vw)
                     fitToWidth(h, vw)
@@ -78,7 +81,7 @@ export default function Hero({ isLoaded }) {
                 {/* ── Back name: Mohammad ── */}
                 <motion.div
                     style={{ y: yTextBack }}
-                    className="absolute z-[5] left-[2%] md:left-[8%] top-[28%] md:top-[30%] pointer-events-none mix-blend-difference"
+                    className="absolute z-[5] left-[2%] md:left-[8%] top-[28%] md:top-[30%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
                 >
                     <motion.h1
                         initial={{ x: '-40%', opacity: 0 }}
@@ -105,7 +108,7 @@ export default function Hero({ isLoaded }) {
                 {/* ── Front name: Haider ── */}
                 <motion.div
                     style={{ y: yTextFront }}
-                    className="absolute z-[15] right-[2%] md:right-[8%] top-[50%] md:top-[50%] pointer-events-none mix-blend-difference"
+                    className="absolute z-[15] right-[2%] md:right-[8%] top-[50%] md:top-[50%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
                 >
                     <motion.h1
                         initial={{ x: '40%', opacity: 0 }}
