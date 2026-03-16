@@ -117,8 +117,8 @@ export default function WhoIAm() {
                    on textWrapEl doesn't offset the start/end positions.         */
                 ScrollTrigger.create({
                     trigger:             '.wia-about',
-                    start:               'top 65%',
-                    end:                 'bottom 35%',
+                    start:               'top 40%',
+                    end:                 'bottom 95%',
                     scrub:               0.5,
                     invalidateOnRefresh: true,
                     onUpdate(self) {
