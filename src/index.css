@@ -617,8 +617,53 @@
     }
 
     .works-grid {
-      grid-template-columns: 1fr;
-      gap: 4rem 0;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem 3%;
+    }
+
+    /* Ensure wrap + card fill exactly their grid cell — nothing more */
+    .works-polaroid-wrap,
+    .works-polaroid {
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    /* Tighter padding + square image so cards don't tower on small screens */
+    .works-polaroid {
+      padding: 0.45rem 0.45rem 0.55rem;
+    }
+
+    .works-polaroid-img {
+      aspect-ratio: 1 / 1;
+    }
+
+    /* Reduce inner parallax overhang to something proportionate on mobile —
+       ±40px travel instead of ±100px keeps the effect while avoiding
+       the 240px overflow that breaks containment on narrow cards           */
+    .works-polaroid-img-inner {
+      height: calc(100% + 80px);
+      margin-top: -40px;
+    }
+
+    /* Smaller caption text */
+    .works-polaroid-title {
+      font-size: 0.65rem;
+    }
+
+    .works-polaroid-cat {
+      font-size: 0.5rem;
+    }
+
+    /* Smaller marquee on mobile */
+    .works-marquee-track span {
+      font-size: 0.6rem;
+      padding-right: 1.5rem;
+    }
+
+    .works-marquee-wrap {
+      padding: 0.35rem 0 0.1rem;
+      margin-top: 0.35rem;
     }
 
     .works-header {

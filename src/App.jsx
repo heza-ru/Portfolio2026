@@ -42,6 +42,56 @@ function LenisScrollTriggerSync() {
     return null
 }
 
+function MobileBanner() {
+    const [visible, setVisible] = useState(
+        () => IS_MOBILE && !sessionStorage.getItem('mob-banner-dismissed')
+    )
+    if (!visible) return null
+    return (
+        <div
+            style={{
+                position:        'fixed',
+                top:             0,
+                left:            0,
+                right:           0,
+                zIndex:          99999,
+                background:      '#F0EDE8',
+                color:           '#0A0A0A',
+                display:         'flex',
+                alignItems:      'center',
+                justifyContent:  'center',
+                gap:             '0.75rem',
+                padding:         '0.65rem 1rem',
+                fontFamily:      "'IBM Plex Mono', monospace",
+                fontSize:        '0.7rem',
+                letterSpacing:   '0.04em',
+                textAlign:       'center',
+            }}
+        >
+            <span>Best experienced on a larger screen ↗</span>
+            <button
+                onClick={() => {
+                    sessionStorage.setItem('mob-banner-dismissed', '1')
+                    setVisible(false)
+                }}
+                style={{
+                    background:   'none',
+                    border:       '1px solid rgba(10,10,10,0.3)',
+                    cursor:       'pointer',
+                    padding:      '0.15rem 0.45rem',
+                    fontSize:     '0.65rem',
+                    fontFamily:   'inherit',
+                    color:        '#0A0A0A',
+                    flexShrink:   0,
+                }}
+                aria-label="Dismiss"
+            >
+                ✕
+            </button>
+        </div>
+    )
+}
+
 function App() {
     const [loaded, setLoaded] = useState(false)
 
@@ -49,6 +99,9 @@ function App() {
         <>
             {/* Preloader sits outside Lenis so scroll is locked during the animation */}
             {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
+
+            {/* Mobile notice — only shown on small screens, dismissible for the session */}
+            <MobileBanner />
 
             {/*
              * On mobile we skip Lenis entirely — native momentum scroll is
