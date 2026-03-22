@@ -28,6 +28,16 @@
 /robots.txt
   Cache-Control: public, max-age=86400
 
+# ads.txt — must be text/plain for DSPs and advertisers
+/ads.txt
+  Content-Type: text/plain; charset=UTF-8
+  Cache-Control: public, max-age=86400
+
+# Custom 404 page
+/404.html
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: public, max-age=0, must-revalidate
+
 # HTML pages — always revalidate; include charset so audit tools don't flag it
 /
   Content-Type: text/html; charset=UTF-8

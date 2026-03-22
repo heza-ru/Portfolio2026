@@ -30,16 +30,14 @@ export default defineConfig(({ mode }) => {
         plugins: [
             react(),
             {
-                /* In dev, Vite's static middleware doesn't map /labs → labs/index.html
-                   automatically. This plugin rewrites the URL before the HTML transform. */
+                /* In dev, Vite doesn't auto-map /labs → labs/index.html etc.
+                   This plugin rewrites the URL before the HTML transform. */
                 name: 'subpage-routing',
                 configureServer(server) {
                     server.middlewares.use((req, _res, next) => {
-                        if (req.url === '/labs' || req.url === '/labs/') {
-                            req.url = '/labs/index.html'
-                        } else if (req.url === '/logs' || req.url === '/logs/') {
-                            req.url = '/logs/index.html'
-                        }
+                        if (req.url === '/labs' || req.url === '/labs/')         req.url = '/labs/index.html'
+                        else if (req.url === '/logs' || req.url === '/logs/')    req.url = '/logs/index.html'
+                        else if (req.url === '/404' || req.url === '/404.html')  req.url = '/404.html'
                         next()
                     })
                 },
@@ -63,9 +61,10 @@ export default defineConfig(({ mode }) => {
         build: {
             rollupOptions: {
                 input: {
-                    main: resolve(__dirname, 'index.html'),
-                    labs: resolve(__dirname, 'labs/index.html'),
-                    logs: resolve(__dirname, 'logs/index.html'),
+                    main:       resolve(__dirname, 'index.html'),
+                    labs:       resolve(__dirname, 'labs/index.html'),
+                    logs:       resolve(__dirname, 'logs/index.html'),
+                    notFound:   resolve(__dirname, '404.html'),
                 },
             },
         },
