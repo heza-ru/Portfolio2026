@@ -5,11 +5,21 @@ const WORDS     = ['DESIGNER', 'DISRUPTOR', 'REBEL', 'ENGINEER', 'CONSULTANT']
 const IDLE_MS   = 5000
 const IN_EVENTS = ['mousemove', 'touchstart', 'keydown', 'click', 'wheel']
 
-export default function IdleOverlay() {
-    const overlayRef = useRef(null)
-    const tweenRef   = useRef(null)
-    const timerRef   = useRef(null)
-    const activeRef  = useRef(false)
+export default function IdleOverlay({ isReady = false }) {
+    const overlayRef  = useRef(null)
+    const tweenRef    = useRef(null)
+    const timerRef    = useRef(null)
+    const activeRef   = useRef(false)
+    const isReadyRef  = useRef(false)
+    const resetRef    = useRef(null)
+
+    /* Once the app signals ready (preloader done), arm the idle timer. */
+    useEffect(() => {
+        if (isReady) {
+            isReadyRef.current = true
+            resetRef.current?.()
+        }
+    }, [isReady])
 
     useEffect(() => {
         const overlay       = overlayRef.current
@@ -57,7 +67,7 @@ export default function IdleOverlay() {
                 for (let c = 0; c < wordsPerRow; c++) {
                     const span = document.createElement('span')
                     span.className   = 'idle-word'
-                    span.textContent = WORDS[(r * wordsPerRow + c) % WORDS.length]
+                    span.textContent = WORDS[Math.floor(Math.random() * WORDS.length)]
                     span.style.cssText = `
                         font-family: 'Clash Display', sans-serif;
                         font-size: ${fs}px;
@@ -101,24 +111,24 @@ export default function IdleOverlay() {
 
         function hide() {
             if (!activeRef.current) return
+            activeRef.current = false   // flip immediately so re-entrant calls are ignored
             tweenRef.current?.kill()
             tweenRef.current = gsap.to(words(), {
                 opacity:  0,
                 duration: 0.05,
                 ease:     'power2.inOut',
                 stagger:  { amount: 0.5, from: 'random' },
-                onComplete: () => {
-                    activeRef.current     = false
-                    overlay.style.display = 'none'
-                },
+                onComplete: () => { overlay.style.display = 'none' },
             })
         }
 
         function resetTimer() {
+            if (!isReadyRef.current) return
             clearTimeout(timerRef.current)
             if (activeRef.current) hide()
             timerRef.current = setTimeout(show, IDLE_MS)
         }
+        resetRef.current = resetTimer
 
         function onVisibility() {
             if (document.hidden) {
@@ -132,7 +142,7 @@ export default function IdleOverlay() {
             }
         }
 
-        resetTimer()
+        /* Don't call resetTimer() here — the isReady effect arms it when the preloader finishes. */
         IN_EVENTS.forEach(e => window.addEventListener(e, resetTimer, { passive: true }))
         document.addEventListener('visibilitychange', onVisibility)
 
