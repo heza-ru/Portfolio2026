@@ -1,2 +1,3 @@
-# Redirect www to non-www (canonical domain consolidation)
-https://www.haider.digital/* https://haider.digital/:splat 301
+# Workers Static Assets only supports relative-path redirects here.
+# www → non-www must be handled in the Cloudflare dashboard:
+#   Redirect Rules → Bulk Redirects → https://www.haider.digital/* → https://haider.digital/:splat
