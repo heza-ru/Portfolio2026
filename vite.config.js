@@ -30,6 +30,21 @@ export default defineConfig(({ mode }) => {
         plugins: [
             react(),
             {
+                /* In dev, Vite's static middleware doesn't map /labs → labs/index.html
+                   automatically. This plugin rewrites the URL before the HTML transform. */
+                name: 'subpage-routing',
+                configureServer(server) {
+                    server.middlewares.use((req, _res, next) => {
+                        if (req.url === '/labs' || req.url === '/labs/') {
+                            req.url = '/labs/index.html'
+                        } else if (req.url === '/logs' || req.url === '/logs/') {
+                            req.url = '/logs/index.html'
+                        }
+                        next()
+                    })
+                },
+            },
+            {
                 name: 'copy-og-image',
                 buildStart() {
                     copyOgImageFromSnapshot()
