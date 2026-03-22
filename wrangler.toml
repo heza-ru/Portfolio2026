@@ -1,0 +1,17 @@
+# Cloudflare Workers — static assets from the Vite production build.
+# Prerequisites: npm run build (outputs to ./dist)
+#
+# Deploy:        npm run deploy:cf
+# Local preview: npm run preview:cf
+#
+# Cloudflare Pages (Git): build command "npm run build", output directory "dist",
+# and set VITE_SITE_URL to your deployment URL (or custom domain) for SEO.
+
+"$schema" = "./node_modules/wrangler/config-schema.json"
+
+name = "portfolio-haider"
+compatibility_date = "2025-12-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
