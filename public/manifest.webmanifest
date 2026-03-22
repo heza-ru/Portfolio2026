@@ -1,17 +1,22 @@
 {
+  "id": "/",
   "name": "Mohammad Haider — Portfolio",
   "short_name": "Mohammad Haider",
   "description": "Sales engineer and creative technologist — enterprise digital adoption, UX engineering, and interactive web experiences.",
+  "lang": "en-US",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0A0A0A",
   "theme_color": "#0A0A0A",
+  "categories": ["portfolio", "technology", "design"],
   "icons": [
     {
       "src": "/vite.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }

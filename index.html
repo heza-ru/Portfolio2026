@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary SEO -->
-    <title>Mohammad Haider | Sales Engineer &amp; Creative Technologist</title>
+    <title>Mohammad Haider</title>
     <meta name="description"
         content="Mohammad Haider — Sales Engineer at Whatfix, Bengaluru. Enterprise digital adoption, AI-powered UX, technical demos &amp; POCs. Creative technologist building interactive web experiences." />
     <meta name="keywords"
@@ -27,7 +27,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Mohammad Haider" />
-    <meta property="og:title" content="Mohammad Haider | Sales Engineer &amp; Creative Technologist" />
+    <meta property="og:title" content="Mohammad Haider" />
     <meta property="og:description"
         content="Sales Engineer at Whatfix. Enterprise digital adoption, AI-powered UX, demos &amp; POCs — plus handcrafted interactive web experiences." />
     <meta property="og:url" content="%SITE_URL%/" />
@@ -36,20 +36,25 @@
     <meta property="og:image" content="%SITE_URL%/og-image.png" />
     <meta property="og:image:secure_url" content="%SITE_URL%/og-image.png" />
     <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Mohammad Haider — portfolio preview" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Mohammad Haider | Sales Engineer &amp; Creative Technologist" />
+    <meta name="twitter:creator" content="@heza_ru" />
+    <meta name="twitter:site" content="@heza_ru" />
+    <meta name="twitter:title" content="Mohammad Haider" />
     <meta name="twitter:description"
         content="Sales Engineer at Whatfix. Enterprise digital adoption, AI-powered UX, demos &amp; POCs — plus interactive web experiences." />
     <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+    <meta name="twitter:image:alt" content="Mohammad Haider — portfolio preview" />
 
     <!-- Icons & PWA -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- JSON-LD: Person + WebSite (helps search & rich results) -->
+    <!-- JSON-LD: WebSite + ProfilePage + Person + ItemList of works -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -64,11 +69,31 @@
           "publisher": { "@id": "%SITE_URL%/#person" }
         },
         {
+          "@type": "ProfilePage",
+          "@id": "%SITE_URL%/#profilepage",
+          "url": "%SITE_URL%/",
+          "name": "Mohammad Haider",
+          "inLanguage": "en-US",
+          "isPartOf": { "@id": "%SITE_URL%/#website" },
+          "about": { "@id": "%SITE_URL%/#person" },
+          "mainEntity": { "@id": "%SITE_URL%/#person" }
+        },
+        {
           "@type": "Person",
           "@id": "%SITE_URL%/#person",
           "name": "Mohammad Haider",
+          "givenName": "Mohammad",
+          "familyName": "Haider",
           "url": "%SITE_URL%/",
-          "image": "%SITE_URL%/og-image.png",
+          "description": "Sales Engineer at Whatfix, Bengaluru. Multidisciplinary engineer and creative technologist building interactive digital experiences with a focus on motion, performance, and enterprise UX.",
+          "image": {
+            "@type": "ImageObject",
+            "@id": "%SITE_URL%/#personimage",
+            "url": "%SITE_URL%/og-image.png",
+            "contentUrl": "%SITE_URL%/og-image.png",
+            "width": 1200,
+            "height": 630
+          },
           "jobTitle": "Sales Engineer",
           "worksFor": {
             "@type": "Organization",
@@ -91,7 +116,77 @@
             "Sales engineering",
             "Technical demonstrations",
             "Frontend development",
-            "Interactive design"
+            "Interactive design",
+            "Go programming",
+            "React",
+            "Self-hosted infrastructure",
+            "Browser extensions",
+            "AI tooling"
+          ]
+        },
+        {
+          "@type": "ItemList",
+          "@id": "%SITE_URL%/#works",
+          "name": "Selected Works",
+          "description": "Open-source projects and creative experiments by Mohammad Haider.",
+          "author": { "@id": "%SITE_URL%/#person" },
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "item": {
+                "@type": "SoftwareSourceCode",
+                "@id": "https://github.com/heza-ru/Tuneminal",
+                "name": "Tuneminal",
+                "description": "A lightweight open-source karaoke machine for your terminal — play songs, follow scrolling lyrics, and sing from the command line, with real-time audio visualisation and karaoke scoring.",
+                "url": "https://github.com/heza-ru/Tuneminal",
+                "programmingLanguage": "Go",
+                "dateCreated": "2025",
+                "author": { "@id": "%SITE_URL%/#person" }
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "item": {
+                "@type": "SoftwareSourceCode",
+                "@id": "https://netstalgia.netlify.app",
+                "name": "Netstalgia",
+                "description": "A 90s-style web app that loads like dial-up, complete with pixel-art loading bars, pop-up ads, a guestbook, Windows 95 desktop, and the iconic dancing baby GIF.",
+                "url": "https://netstalgia.netlify.app",
+                "programmingLanguage": "JavaScript",
+                "dateCreated": "2025",
+                "author": { "@id": "%SITE_URL%/#person" }
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "item": {
+                "@type": "SoftwareSourceCode",
+                "@id": "https://github.com/heza-ru/CallScribe",
+                "name": "CallScribe",
+                "description": "A Chromium browser extension that extracts Mindtickle call transcripts and converts them into structured JIRA tickets and Productboard insights via Claude AI — with one click.",
+                "url": "https://github.com/heza-ru/CallScribe",
+                "programmingLanguage": "JavaScript",
+                "dateCreated": "2025",
+                "author": { "@id": "%SITE_URL%/#person" }
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "item": {
+                "@type": "SoftwareSourceCode",
+                "@id": "https://github.com/heza-ru/Project-Localhost",
+                "name": "Project Localhost",
+                "description": "A Raspberry Pi 5 local infrastructure stack running DNS resolution, home automation, and a fully self-hosted LLM — entirely on your own hardware, zero cloud dependency.",
+                "url": "https://github.com/heza-ru/Project-Localhost",
+                "programmingLanguage": "Shell",
+                "dateCreated": "2026",
+                "author": { "@id": "%SITE_URL%/#person" }
+              }
+            }
           ]
         }
       ]
