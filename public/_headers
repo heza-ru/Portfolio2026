@@ -28,6 +28,15 @@
 /robots.txt
   Cache-Control: public, max-age=86400
 
-# HTML shell — always revalidate (ensures deploys propagate immediately)
+# HTML pages — always revalidate; include charset so audit tools don't flag it
 /
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: public, max-age=0, must-revalidate
+
+/labs/
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: public, max-age=0, must-revalidate
+
+/logs/
+  Content-Type: text/html; charset=UTF-8
   Cache-Control: public, max-age=0, must-revalidate

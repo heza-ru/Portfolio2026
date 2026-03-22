@@ -8,7 +8,7 @@
     <!-- Primary SEO -->
     <title>Mohammad Haider</title>
     <meta name="description"
-        content="Mohammad Haider — Sales Engineer at Whatfix, Bengaluru. Enterprise digital adoption, AI-powered UX, technical demos &amp; POCs. Creative technologist building interactive web experiences." />
+        content="Sales engineer and creative technologist based in Bengaluru. Building enterprise digital tools, interactive web experiences, and open-source software." />
     <meta name="keywords"
         content="Mohammad Haider, Whatfix, sales engineer, digital adoption, UX engineering, creative developer, portfolio, Bengaluru, enterprise UX, AI" />
     <meta name="author" content="Mohammad Haider" />
@@ -52,6 +52,7 @@
 
     <!-- Icons & PWA -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/og-image.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- JSON-LD: WebSite + ProfilePage + Person + ItemList of works -->
@@ -221,6 +222,8 @@
 </head>
 
 <body>
+    <!-- Static H1 for crawlers that don't execute JS. Visually hidden; not display:none. -->
+    <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Mohammad Haider — Portfolio</h1>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 </body>

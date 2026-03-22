@@ -1,0 +1,2 @@
+# Redirect www to non-www (canonical domain consolidation)
+https://www.haider.digital/* https://haider.digital/:splat 301

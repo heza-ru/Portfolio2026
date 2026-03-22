@@ -5,10 +5,12 @@ import gsap from 'gsap'
 import HoverChars from './HoverChars'
 
 const navLinks = [
-    { name: 'Index', url: '#hero' },
-    { name: 'About', url: '#about' },
-    { name: 'Works', url: '#works' },
+    { name: 'Index',   url: '#hero' },
+    { name: 'About',   url: '#about' },
+    { name: 'Works',   url: '#works' },
     { name: 'Contact', url: '#footer' },
+    { name: 'Labs',    url: '/labs' },
+    { name: 'Logs',    url: '/logs' },
 ]
 
 /* ── Pixel-block constants (directly from CODE source) ─────────── */

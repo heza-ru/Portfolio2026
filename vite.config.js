@@ -45,5 +45,14 @@ export default defineConfig(({ mode }) => {
                 },
             },
         ],
+        build: {
+            rollupOptions: {
+                input: {
+                    main: resolve(__dirname, 'index.html'),
+                    labs: resolve(__dirname, 'labs/index.html'),
+                    logs: resolve(__dirname, 'logs/index.html'),
+                },
+            },
+        },
     }
 })

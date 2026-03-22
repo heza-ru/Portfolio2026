@@ -37,6 +37,8 @@ const LINKS = {
         { label: 'About',   href: '#about' },
         { label: 'Works',   href: '#works' },
         { label: 'Contact', href: '#footer' },
+        { label: 'Labs',    href: '/labs' },
+        { label: 'Logs',    href: '/logs' },
     ],
     networks: [
         { label: 'LinkedIn', href: 'https://www.linkedin.com/in/heza/' },
