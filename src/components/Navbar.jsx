@@ -5,10 +5,10 @@ import gsap from 'gsap'
 import HoverChars from './HoverChars'
 
 const navLinks = [
-    { name: 'Index', url: '#hero', img: 'https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=800&auto=format&fit=crop' },
-    { name: 'About', url: '#about', img: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop' },
-    { name: 'Works', url: '#works', img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop' },
-    { name: 'Contact', url: '#footer', img: 'https://images.unsplash.com/photo-1517462964-21fdcec3f25b?q=80&w=800&auto=format&fit=crop' },
+    { name: 'Index', url: '#hero' },
+    { name: 'About', url: '#about' },
+    { name: 'Works', url: '#works' },
+    { name: 'Contact', url: '#footer' },
 ]
 
 /* ── Pixel-block constants (directly from CODE source) ─────────── */
@@ -60,9 +60,14 @@ function ItalicAName({ children }) {
 }
 
 
+const SOCIAL_LINKS = [
+    { label: 'GitHub', href: 'https://github.com/heza-ru' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/heza/' },
+    { label: 'Email', href: 'mailto:transmission@haider.com' },
+]
+
 export default function Navbar({ isLoaded }) {
     const [isOpen, setIsOpen] = useState(false)
-    const [hoveredIdx, setHoveredIdx] = useState(null)
     const [isScrolled, setIsScrolled] = useState(false)
 
     useEffect(() => {
@@ -145,7 +150,6 @@ export default function Navbar({ isLoaded }) {
         gsap.set(blocksRef.current, { opacity: 0 })
         tweenRef.current = gsap.timeline({
             onComplete: () => {
-                setHoveredIdx(null)
                 busyRef.current = false
             },
         })
@@ -312,8 +316,6 @@ export default function Navbar({ isLoaded }) {
                                 exit={{ x: -40, opacity: 0 }}
                                 transition={{ delay: 0.05 + i * 0.07, ease: 'easeOut', duration: 0.45 }}
                                 className="relative group w-fit"
-                                onMouseEnter={() => setHoveredIdx(i)}
-                                onMouseLeave={() => setHoveredIdx(null)}
                                 data-cursor="OPEN"
                             >
                                 {/* Ghost letter backdrop */}
@@ -337,30 +339,12 @@ export default function Navbar({ isLoaded }) {
                             transition={{ delay: 0.5 }}
                             className="mt-12 flex gap-6 font-mono text-xs uppercase tracking-widest opacity-40"
                         >
-                            {['GitHub', 'LinkedIn', 'Email'].map(s => (
-                                <a key={s} href="#" className="hover:opacity-100 hover:text-accent transition-opacity">
-                                    <HoverChars stagger={0.025} duration={0.4}>{s}</HoverChars>
+                            {SOCIAL_LINKS.map(s => (
+                                <a key={s.label} href={s.href} target={s.href.startsWith('mailto:') ? undefined : '_blank'} rel={s.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'} className="hover:opacity-100 hover:text-accent transition-opacity">
+                                    <HoverChars stagger={0.025} duration={0.4}>{s.label}</HoverChars>
                                 </a>
                             ))}
                         </motion.div>
-                    </div>
-
-                    {/* Hover Image — right half */}
-                    <div className="hidden md:block absolute right-0 top-0 w-1/2 h-full pointer-events-none overflow-hidden">
-                        <AnimatePresence>
-                            {hoveredIdx !== null && (
-                                <motion.img
-                                    key={navLinks[hoveredIdx].name}
-                                    initial={{ opacity: 0, scale: 1.06 }}
-                                    animate={{ opacity: 0.35, scale: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.45 }}
-                                    src={navLinks[hoveredIdx].img}
-                                    alt=""
-                                    className="w-full h-full object-cover grayscale"
-                                />
-                            )}
-                        </AnimatePresence>
                     </div>
 
                     {/* Footer bar */}

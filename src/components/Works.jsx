@@ -275,7 +275,7 @@ export default function Works() {
     }, [])
 
     return (
-        <div ref={containerRef} className="works-section" style={{ backgroundColor: '#0A0A0A' }}>
+        <div ref={containerRef} id="works" className="works-section" style={{ backgroundColor: '#0A0A0A' }}>
 
             <div className="works-header">
                 <span>Selected</span>
@@ -296,7 +296,7 @@ export default function Works() {
 
             {/* ── See More ── */}
             <div className="works-see-more-wrap">
-                <a href="#" className="works-see-more">
+                <a href="https://github.com/heza-ru" target="_blank" rel="noopener noreferrer" className="works-see-more">
                     <span>See More</span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                         <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square"/>

@@ -105,6 +105,37 @@
 
 @layer utilities {
 
+  /* Skip link — visible on keyboard focus (a11y + crawlability of main landmark) */
+  .skip-to-main {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: 100000;
+  }
+
+  .skip-to-main:focus {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    padding: 0.65rem 1rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #0A0A0A;
+    background: #F0EDE8;
+    border: 1px solid rgba(10, 10, 10, 0.2);
+    text-decoration: none;
+    outline: 2px solid #E8A87C;
+    outline-offset: 2px;
+  }
+
   /* Clip-path helper used in the Navbar takeover */
   .clip-circle-none {
     clip-path: circle(0% at 50% 50%);

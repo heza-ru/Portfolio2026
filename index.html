@@ -1,11 +1,102 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mohammad Haider</title>
+
+    <!-- Primary SEO -->
+    <title>Mohammad Haider | Sales Engineer &amp; Creative Technologist</title>
+    <meta name="description"
+        content="Mohammad Haider — Sales Engineer at Whatfix, Bengaluru. Enterprise digital adoption, AI-powered UX, technical demos &amp; POCs. Creative technologist building interactive web experiences." />
+    <meta name="keywords"
+        content="Mohammad Haider, Whatfix, sales engineer, digital adoption, UX engineering, creative developer, portfolio, Bengaluru, enterprise UX, AI" />
+    <meta name="author" content="Mohammad Haider" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F0EDE8" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <link rel="canonical" href="%SITE_URL%/" />
+    <link rel="alternate" hreflang="en-US" href="%SITE_URL%/" />
+    <link rel="alternate" hreflang="x-default" href="%SITE_URL%/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mohammad Haider" />
+    <meta property="og:title" content="Mohammad Haider | Sales Engineer &amp; Creative Technologist" />
+    <meta property="og:description"
+        content="Sales Engineer at Whatfix. Enterprise digital adoption, AI-powered UX, demos &amp; POCs — plus handcrafted interactive web experiences." />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:locale" content="en_US" />
+    <!-- OG image: copied from src/assets/snapshot.png → public/og-image.png at dev/build -->
+    <meta property="og:image" content="%SITE_URL%/og-image.png" />
+    <meta property="og:image:secure_url" content="%SITE_URL%/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:alt" content="Mohammad Haider — portfolio preview" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mohammad Haider | Sales Engineer &amp; Creative Technologist" />
+    <meta name="twitter:description"
+        content="Sales Engineer at Whatfix. Enterprise digital adoption, AI-powered UX, demos &amp; POCs — plus interactive web experiences." />
+    <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+
+    <!-- Icons & PWA -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- JSON-LD: Person + WebSite (helps search & rich results) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "%SITE_URL%/#website",
+          "url": "%SITE_URL%/",
+          "name": "Mohammad Haider",
+          "description": "Portfolio of Mohammad Haider — Sales Engineer at Whatfix, creative technologist, and builder of interactive digital experiences.",
+          "inLanguage": "en-US",
+          "publisher": { "@id": "%SITE_URL%/#person" }
+        },
+        {
+          "@type": "Person",
+          "@id": "%SITE_URL%/#person",
+          "name": "Mohammad Haider",
+          "url": "%SITE_URL%/",
+          "image": "%SITE_URL%/og-image.png",
+          "jobTitle": "Sales Engineer",
+          "worksFor": {
+            "@type": "Organization",
+            "name": "Whatfix",
+            "url": "https://whatfix.com"
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Bengaluru",
+            "addressRegion": "Karnataka",
+            "addressCountry": "IN"
+          },
+          "sameAs": [
+            "https://www.linkedin.com/in/heza/",
+            "https://github.com/heza-ru"
+          ],
+          "knowsAbout": [
+            "Digital adoption",
+            "Enterprise UX",
+            "Sales engineering",
+            "Technical demonstrations",
+            "Frontend development",
+            "Interactive design"
+          ]
+        }
+      ]
+    }
+    </script>
 
     <!-- DNS prefetch for external font origins -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -17,14 +108,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
 
+    <!-- Hero 3D — start download early (meshopt-compressed GLB) -->
+    <link rel="preload" href="/HeroModel4.glb" as="fetch" crossorigin="anonymous" />
+
     <!--
       Load only the weights we actually use.
-      Instrument Serif: 400 regular + 400 italic (hero title, preloader, bio text)
-      IBM Plex Mono: 400 only (used sparingly)
-      Removed Cormorant Garamond + Inter — not referenced in current components.
+      Instrument Serif, IBM Plex Mono, Cormorant Garamond (drama / Philosophy)
     -->
     <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;1,400&family=Instrument+Serif:ital@0;1&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Mono:ital,wght@0,400;1,400&family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet">
 
     <!-- Fontshare: Clash Display (headers) + Satoshi (body) -->

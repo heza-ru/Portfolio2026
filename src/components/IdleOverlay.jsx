@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 
-const WORDS     = ['DESIGNER', 'ENTREPRENEUR', 'DISRUPTOR', 'REBEL', 'ENGINEER', 'CONSULTANT']
+const WORDS     = ['DESIGNER', 'DISRUPTOR', 'REBEL', 'ENGINEER', 'CONSULTANT']
 const IDLE_MS   = 5000
 const IN_EVENTS = ['mousemove', 'touchstart', 'keydown', 'click', 'wheel']
 

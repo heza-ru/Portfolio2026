@@ -98,6 +98,13 @@ function App() {
 
     return (
         <>
+            <a
+                href="#main-content"
+                className="skip-to-main"
+            >
+                Skip to main content
+            </a>
+
             {/* Preloader sits outside Lenis so scroll is locked during the animation */}
             {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
 
@@ -130,7 +137,7 @@ function App() {
                     <ScrollProgressBar />
                     <IdleOverlay />
 
-                    <main className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
+                    <main id="main-content" className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
                         <Hero isLoaded={loaded} />
                         <Navbar isLoaded={loaded} />
                         <WhoIAm />

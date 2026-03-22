@@ -33,16 +33,14 @@ const BLOCKS_MOBILE = [
 
 const LINKS = {
     quick: [
-        { label: 'Home',    href: '#' },
-        { label: 'Resume',  href: '#' },
-        { label: 'Works',   href: '#' },
-        { label: 'Contact', href: '#' },
+        { label: 'Home',    href: '#hero' },
+        { label: 'About',   href: '#about' },
+        { label: 'Works',   href: '#works' },
+        { label: 'Contact', href: '#footer' },
     ],
     networks: [
-        { label: 'LinkedIn',  href: '#' },
-        { label: 'Instagram', href: '#' },
-        { label: 'Behance',   href: '#' },
-        { label: 'GitHub',    href: '#' },
+        { label: 'LinkedIn', href: 'https://www.linkedin.com/in/heza/' },
+        { label: 'GitHub',   href: 'https://github.com/heza-ru' },
     ],
 }
 
@@ -212,7 +210,7 @@ export default function Footer() {
     }, [])
 
     return (
-        <footer ref={sectionRef} className="ft-footer">
+        <footer ref={sectionRef} id="footer" className="ft-footer">
 
             {/* ── Top bar ──────────────────────────────────────────────── */}
             <div className="ft-bar">
@@ -231,7 +229,7 @@ export default function Footer() {
                     <p className="ft-bar-label">Networks</p>
                     <div className="ft-bar-links">
                         {LINKS.networks.map(l => (
-                            <a key={l.label} href={l.href} className="ft-bar-link">
+                            <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="ft-bar-link">
                                 <HoverChars stagger={0.025} duration={0.45}>{l.label}</HoverChars>
                             </a>
                         ))}

@@ -40,6 +40,9 @@ build/
 coverage/
 .nyc_output/
 
+# Generated OG image (source: src/assets/snapshot.png — copied at dev/build)
+public/og-image.png
+
 # Misc
 *.tsbuildinfo
 .cache/
