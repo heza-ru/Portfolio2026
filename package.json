@@ -10,7 +10,8 @@
         "lint": "eslint .",
         "preview": "vite preview",
         "deploy:cf": "npm run build && wrangler deploy",
-        "preview:cf": "npm run build && wrangler dev"
+        "preview:cf": "npm run build && wrangler dev",
+        "generate:favicons": "node scripts/generate-favicons.mjs"
     },
     "dependencies": {
         "@gsap/react": "^2.1.1",
@@ -38,6 +39,7 @@
         "@vitejs/plugin-react": "^4.3.4",
         "autoprefixer": "^10.4.20",
         "postcss": "^8.4.49",
+        "sharp": "^0.34.5",
         "tailwindcss": "3.4.17",
         "vite": "^6.0.5",
         "wrangler": "^4.28.0"

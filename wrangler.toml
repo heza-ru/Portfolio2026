@@ -11,7 +11,9 @@
 
 name = "portfolio-haider"
 compatibility_date = "2025-12-01"
+main = "src/worker.js"
 
 [assets]
 directory = "./dist"
 not_found_handling = "404-page"
+binding = "ASSETS"
