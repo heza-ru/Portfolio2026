@@ -248,12 +248,16 @@ export default function Works() {
 
             /* ── Image inner parallax ───────────────────────────────────────────
                The inner wrapper (not the img itself) gets the y shift so it
-               never conflicts with GSAP's own transform on the img element.  */
+               never conflicts with GSAP's own transform on the img element.
+               Range is reduced on mobile (±40) to match the CSS overhang —
+               mobile CSS gives calc(100%+80px) / margin-top:-40px, so ±40 px
+               is the maximum safe travel before the white polaroid bg shows.  */
+            const innerRange = IS_MOBILE ? 40 : 100
             document.querySelectorAll('.works-polaroid-img-inner').forEach(inner => {
                 gsap.fromTo(inner,
-                    { y: 100 },
+                    { y: innerRange },
                     {
-                        y:    -100,
+                        y:    -innerRange,
                         ease: 'none',
                         scrollTrigger: {
                             trigger:             inner.closest('.works-polaroid-wrap'),

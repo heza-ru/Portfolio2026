@@ -16,7 +16,6 @@ export default function HeroModel({ className = '' }) {
         if (!container) return
 
         let disposed = false
-        let idleCbId = null
         let rafId = 0
 
         const cleanupFns = []
@@ -26,19 +25,38 @@ export default function HeroModel({ className = '' }) {
         }
 
         const run = async () => {
-            // Let first paint / preloader finish before WebGL + PMREM on phones.
-            if (IS_MOBILE && typeof requestIdleCallback === 'function') {
-                await new Promise((resolve) => {
-                    idleCbId = requestIdleCallback(() => resolve(), { timeout: 1500 })
-                })
-            }
-            if (disposed) return
-
+            // Start loading immediately — the GLB is already preloaded via
+            // <link rel="preload">, so it is in the browser cache.
+            // Deferring with requestIdleCallback caused a black-canvas flash on
+            // mobile because the canvas revealed (preloader done) before the
+            // model ever started loading.
             await MeshoptDecoder.ready
             if (disposed) return
 
-            const w = container.clientWidth
-            const h = container.clientHeight
+            // Wait for the container to have real pixel dimensions.
+            // On some mobile browsers the first paint happens before layout
+            // is flushed, leaving clientWidth / clientHeight at 0.
+            let w = container.clientWidth
+            let h = container.clientHeight
+
+            if (!w || !h) {
+                await new Promise((resolve) => {
+                    const ro = new ResizeObserver((entries) => {
+                        for (const entry of entries) {
+                            if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+                                ro.disconnect()
+                                resolve()
+                                return
+                            }
+                        }
+                    })
+                    ro.observe(container)
+                    pushCleanup(() => ro.disconnect())
+                })
+                if (disposed) return
+                w = container.clientWidth
+                h = container.clientHeight
+            }
 
             const scene = new THREE.Scene()
             scene.background = new THREE.Color(0x0a0a0a)
@@ -49,14 +67,23 @@ export default function HeroModel({ className = '' }) {
             const renderer = new THREE.WebGLRenderer({
                 antialias: !IS_MOBILE,
                 alpha: false,
-                precision: 'highp',
+                // mediump is sufficient on mobile and substantially faster than highp
+                precision: IS_MOBILE ? 'mediump' : 'highp',
                 powerPreference: IS_MOBILE ? 'low-power' : 'high-performance',
+                // Don't throw on low-end mobile GPUs that fail performance tests
+                failIfMajorPerformanceCaveat: false,
             })
             renderer.setSize(w, h)
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1 : 1.5))
             renderer.outputColorSpace = THREE.SRGBColorSpace
             renderer.toneMapping = THREE.ACESFilmicToneMapping
             renderer.toneMappingExposure = IS_MOBILE ? 1.1 : 0.85
+            // block display prevents the 4px inline-element gap below the canvas
+            renderer.domElement.style.display = 'block'
+            // Keep canvas invisible until the model is in the scene — prevents the
+            // "black canvas" flash that occurs between canvas-append and first model render
+            container.style.opacity = '0'
+            container.style.transition = 'opacity 0.5s ease'
             container.appendChild(renderer.domElement)
 
             const pmrem = new THREE.PMREMGenerator(renderer)
@@ -113,9 +140,15 @@ export default function HeroModel({ className = '' }) {
                     baseY = modelGroup.position.y
 
                     scene.add(modelGroup)
+                    // Reveal the canvas now that the model is ready
+                    container.style.opacity = '1'
                 },
                 undefined,
-                (err) => console.error('GLB load error', err),
+                (err) => {
+                    console.error('GLB load error', err)
+                    // Still reveal on error so the background shows rather than staying invisible
+                    container.style.opacity = '1'
+                },
             )
 
             const target = { x: 0, y: -0.5 }
@@ -173,6 +206,20 @@ export default function HeroModel({ className = '' }) {
             }
             animate()
 
+            // Pause the RAF when the tab is hidden — saves battery on mobile
+            if (IS_MOBILE) {
+                const onVisibilityChange = () => {
+                    if (document.hidden) {
+                        cancelAnimationFrame(rafId)
+                    } else {
+                        lastTime = performance.now()
+                        animate()
+                    }
+                }
+                document.addEventListener('visibilitychange', onVisibilityChange)
+                pushCleanup(() => document.removeEventListener('visibilitychange', onVisibilityChange))
+            }
+
             pushCleanup(() => {
                 cancelAnimationFrame(rafId)
                 envTexture.dispose()
@@ -187,9 +234,6 @@ export default function HeroModel({ className = '' }) {
 
         return () => {
             disposed = true
-            if (idleCbId !== null && typeof cancelIdleCallback === 'function') {
-                cancelIdleCallback(idleCbId)
-            }
             for (let i = cleanupFns.length - 1; i >= 0; i--) {
                 cleanupFns[i]()
             }

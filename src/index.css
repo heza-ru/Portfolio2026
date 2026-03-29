@@ -88,6 +88,12 @@
     display: block;
   }
 
+  /* Canvas is inline by default; block removes the 4 px line-height gap
+     that would otherwise appear below the Three.js WebGL canvas.        */
+  canvas {
+    display: block;
+  }
+
   /* GSAP pin-spacer divs inherit their section's background — without
      this they render transparent and create visible gaps when pinned   */
   .pin-spacer {
@@ -622,6 +628,20 @@
 
   /* ── Global mobile overrides ─────────────────────────────────────────── */
   @media (max-width: 767px) {
+
+    /* Prevent double-tap zoom delay on interactive elements on iOS */
+    a, button, [role="button"] {
+      touch-action: manipulation;
+    }
+
+    /* Eliminate any stray default margins that could create pixel gaps
+       between GSAP-pinned sections and their neighbours.              */
+    .wia-about,
+    .wia-roles,
+    .works-section {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
 
     /* ── WhoIAm ── */
     .wia-about {
