@@ -655,7 +655,11 @@
 
     .wia-roles {
       height: auto;
-      min-height: 100svh;
+      /* dvh matches the hero's own h-[100dvh] — both units grow together
+         when Chrome hides its URL bar, so wia-roles always fully covers
+         the hero behind it. Using svh left a (lvh - svh) gap at the bottom
+         through which the sticky hero model was visible.                  */
+      min-height: 100dvh;
     }
 
     .wia-role-row {
