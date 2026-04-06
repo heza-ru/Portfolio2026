@@ -21,7 +21,7 @@ function readEnvSiteUrl() {
     }
 }
 
-const siteUrl  = (process.env.VITE_SITE_URL || readEnvSiteUrl() || 'https://example.com').replace(/\/$/, '')
+const siteUrl  = (process.env.VITE_SITE_URL || readEnvSiteUrl() || 'https://haider.digital').replace(/\/$/, '')
 const lastmod  = new Date().toISOString().split('T')[0]   // YYYY-MM-DD
 
 const robots = `User-agent: *

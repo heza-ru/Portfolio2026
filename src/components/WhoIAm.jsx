@@ -83,21 +83,24 @@ export default function WhoIAm() {
                Shorter scroll distance (1.2 × vh) so the outro finishes quickly.
                Second half: DESIGNER scales down AND fades to nothing.          */
             ScrollTrigger.create({
-                trigger:    rolesEl,
-                start:      'top top',
-                end:        `+=${vh * 1.2}`,   // ← quicker: was vh * 2
-                pin:        true,
-                scrub:      1,
-                pinSpacing: true,
+                trigger:             rolesEl,
+                start:               'top top',
+                end:                 () => `+=${window.innerHeight * 1.2}`,
+                pin:                 true,
+                scrub:               0.4,
+                pinSpacing:          true,
+                invalidateOnRefresh: true,
                 onUpdate(self) {
                     if (self.progress <= 0.5) {
-                        const p = self.progress / 0.5
-                        gsap.set(rows[0], { y:  p * vh * 1.2, scale: 1, opacity: 1 })
-                        gsap.set(rows[2], { y: -p * vh * 1.2, scale: 1, opacity: 1 })
+                        const p   = self.progress / 0.5
+                        const cvh = window.innerHeight
+                        gsap.set(rows[0], { y:  p * cvh * 1.2, scale: 1, opacity: 1 })
+                        gsap.set(rows[2], { y: -p * cvh * 1.2, scale: 1, opacity: 1 })
                         gsap.set(rows[1], { scale: 1, opacity: 1 })
                     } else {
-                        gsap.set(rows[0], { y:  vh * 1.2 })
-                        gsap.set(rows[2], { y: -vh * 1.2 })
+                        const cvh = window.innerHeight
+                        gsap.set(rows[0], { y:  cvh * 1.2 })
+                        gsap.set(rows[2], { y: -cvh * 1.2 })
 
                         const p        = (self.progress - 0.5) / 0.5
                         const minScale = window.innerWidth <= 768 ? 0.22 : 0.1
@@ -114,18 +117,22 @@ export default function WhoIAm() {
                invalidateOnRefresh ensures positions stay correct on resize.    */
             if (dimEl && brightEl) {
                 gsap.set(brightEl, { clipPath: 'inset(0 0 100% 0)' })
+                gsap.set(dimEl,    { clipPath: 'inset(0 0 0% 0)' })
 
                 /* Trigger on the section (not dimEl) so the parallax y-transform
                    on textWrapEl doesn't offset the start/end positions.         */
                 ScrollTrigger.create({
                     trigger:             '.wia-about',
-                    start:               'top 40%',
+                    start:               'top 60%',
                     end:                 'bottom 95%',
                     scrub:               0.5,
                     invalidateOnRefresh: true,
                     onUpdate(self) {
                         const pct = (1 - self.progress) * 100
+                        // bright reveals top-down; dim hides top-down in sync —
+                        // exactly one layer visible at any scroll position
                         gsap.set(brightEl, { clipPath: `inset(0 0 ${pct}% 0)` })
+                        gsap.set(dimEl,    { clipPath: `inset(${100 - pct}% 0 0 0)` })
                     },
                 })
             }
@@ -204,7 +211,7 @@ export default function WhoIAm() {
                 </div>
 
                 <div ref={wrapRef} className="wia-text-wrap">
-                    <p className="wia-text wia-text-dim" style={{ opacity: 0 }}>{BIO}</p>
+                    <p className="wia-text wia-text-dim">{BIO}</p>
                     {/* pretext canvas — displaces text around cursor & tail */}
                     <div className="wia-text wia-text-bright">
                         <WhoIAmTextCanvas wrapRef={wrapRef} />
