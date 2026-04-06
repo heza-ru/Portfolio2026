@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import WhoIAmTextCanvas from './WhoIAmTextCanvas'
 
 const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
 
@@ -23,6 +24,7 @@ function fitToWidth(el, targetWidth, { min = 8, max = 400 } = {}) {
 
 export default function WhoIAm() {
     const containerRef = useRef(null)
+    const wrapRef      = useRef(null)
 
     useEffect(() => {
         const dimEl    = document.querySelector('.wia-text-dim')
@@ -201,9 +203,12 @@ export default function WhoIAm() {
                     <span>Am</span>
                 </div>
 
-                <div className="wia-text-wrap">
-                    <p className="wia-text wia-text-dim">{BIO}</p>
-                    <p className="wia-text wia-text-bright" aria-hidden="true">{BIO}</p>
+                <div ref={wrapRef} className="wia-text-wrap">
+                    <p className="wia-text wia-text-dim" style={{ opacity: 0 }}>{BIO}</p>
+                    {/* pretext canvas — displaces text around cursor & tail */}
+                    <div className="wia-text wia-text-bright">
+                        <WhoIAmTextCanvas wrapRef={wrapRef} />
+                    </div>
                 </div>
             </section>
 

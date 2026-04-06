@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { cursorState, TRAIL_LENGTH } from '../utils/cursorState'
 
 /*
  * Custom cursor — performance notes (2026):
@@ -65,8 +66,21 @@ export default function CustomCursor() {
 
         const render = () => {
             // Lerp toward mouse — smooth trailing feel
+            const prevX = current.current.x
+            const prevY = current.current.y
             current.current.x += (mouse.current.x - current.current.x) * 0.15
             current.current.y += (mouse.current.y - current.current.y) * 0.15
+
+            // Write lerped position + isHovering to shared state for text displacement
+            cursorState.current.x = current.current.x
+            cursorState.current.y = current.current.y
+            cursorState.isHovering = isHoveringRef.current
+
+            // Maintain trail: push previous position, keep last TRAIL_LENGTH entries
+            if (Math.abs(current.current.x - prevX) > 0.1 || Math.abs(current.current.y - prevY) > 0.1) {
+                cursorState.trail.unshift({ x: prevX, y: prevY })
+                if (cursorState.trail.length > TRAIL_LENGTH) cursorState.trail.length = TRAIL_LENGTH
+            }
 
             if (cursorRef.current) {
                 cursorRef.current.style.transform =
