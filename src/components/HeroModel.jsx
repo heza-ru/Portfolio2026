@@ -72,8 +72,7 @@ export default function HeroModel({ className = '' }) {
                 failIfMajorPerformanceCaveat: false,
             })
             renderer.setSize(w, h)
-            // 1.5 on mobile gives sharper rendering on retina without the full 3× cost
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 1.5))
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 2 : 1.5))
             renderer.outputColorSpace = THREE.SRGBColorSpace
             renderer.toneMapping = THREE.ACESFilmicToneMapping
             renderer.toneMappingExposure = IS_MOBILE ? 1.1 : 0.85
