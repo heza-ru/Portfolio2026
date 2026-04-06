@@ -65,15 +65,14 @@ export default function HeroModel({ className = '' }) {
             camera.position.set(0, 0, 5)
 
             const renderer = new THREE.WebGLRenderer({
-                antialias: true,
+                antialias: !IS_MOBILE,
                 alpha: false,
                 precision: IS_MOBILE ? 'mediump' : 'highp',
                 powerPreference: IS_MOBILE ? 'low-power' : 'high-performance',
                 failIfMajorPerformanceCaveat: false,
             })
             renderer.setSize(w, h)
-            // Cap at 1.5 on mobile: noticeably sharper on retina screens
-            // without the full cost of native 3x rendering
+            // 1.5 on mobile gives sharper rendering on retina without the full 3× cost
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 1.5))
             renderer.outputColorSpace = THREE.SRGBColorSpace
             renderer.toneMapping = THREE.ACESFilmicToneMapping
