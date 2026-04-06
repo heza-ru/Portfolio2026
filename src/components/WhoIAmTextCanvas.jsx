@@ -65,10 +65,13 @@ function measureFontSize(targetWidth) {
  * Props:
  *   wrapRef — ref to the .wia-text-wrap element (for coordinate mapping).
  */
+const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
 export default function WhoIAmTextCanvas({ wrapRef }) {
     const containerRef = useRef(null)
 
     useEffect(() => {
+        if (IS_MOBILE) return
         const container = containerRef.current
         if (!container) return
 
@@ -222,6 +225,8 @@ export default function WhoIAmTextCanvas({ wrapRef }) {
             pool.forEach(el => el.remove())
         }
     }, [wrapRef])
+
+    if (IS_MOBILE) return null
 
     return (
         <div
