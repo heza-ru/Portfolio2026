@@ -339,6 +339,11 @@
 
   /* ── CODE (10) Who I Am section ──────────────────────────────────────── */
 
+  /* Desktop only: breathing room before roles section */
+  .wia-container {
+    padding-top: 8rem;
+  }
+
   /* Section 1 — paragraph text reveal */
   .wia-about {
     position: relative;
@@ -638,9 +643,15 @@
        between GSAP-pinned sections and their neighbours.              */
     .wia-about,
     .wia-roles,
+    .wia-container,
     .works-section {
       margin-top: 0;
       margin-bottom: 0;
+    }
+
+    /* No gap before wia-roles on mobile — it must cover the sticky hero flush */
+    .wia-container {
+      padding-top: 0;
     }
 
     /* ── WhoIAm ── */

@@ -193,7 +193,7 @@ export default function WhoIAm() {
     }, [])
 
     return (
-        <div ref={containerRef} id="about" style={{ backgroundColor: '#0A0A0A', paddingTop: '8rem' }}>
+        <div ref={containerRef} id="about" className="wia-container" style={{ backgroundColor: '#0A0A0A' }}>
 
             {/* ── Section 1: Roles reveal ───────────────────────────────────── */}
             <section className="wia-roles">
