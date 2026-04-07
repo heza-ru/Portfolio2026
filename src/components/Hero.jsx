@@ -28,19 +28,22 @@ function fitToWidth(el, targetWidth) {
     return lo
 }
 
-export default function Hero({ isLoaded }) {
-    const container    = useRef(null)
-    const mohammadRef  = useRef(null)
-    const haiderRef    = useRef(null)
+export default function Hero({ isLoaded, audioDataRef }) {
+    // scrollWrapper is 250vh tall — gives scroll distance while the inner
+    // section is pinned. useScroll tracks this wrapper so scrollYProgress
+    // goes 0→1 over the full 150vh of "extra" scroll room.
+    const scrollWrapper = useRef(null)
+    const mohammadRef   = useRef(null)
+    const haiderRef     = useRef(null)
 
     const { scrollYProgress } = useScroll({
-        target: container,
-        offset: ['start start', 'end start'],
+        target: scrollWrapper,
+        offset: ['start start', 'end end'],
     })
 
-    const yBg        = useTransform(scrollYProgress, [0, 1], ['0%', '15%'])
-    const yTextBack  = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
-    const yTextFront = useTransform(scrollYProgress, [0, 1], ['0%', '-15%'])
+    const yTextBack  = useTransform(scrollYProgress, [0, 0.6], ['0%', '12%'])
+    const yTextFront = useTransform(scrollYProgress, [0, 0.6], ['0%', '-8%'])
+    const textOpacity = useTransform(scrollYProgress, [0, 0.35, 0.6], [1, 0.4, 0])
 
     /* ── Mobile-only: fit each name to fill the viewport width ── */
     useEffect(() => {
@@ -51,16 +54,12 @@ export default function Hero({ isLoaded }) {
             if (!m || !h) return
 
             if (isMobile) {
-                // 92 % of vw: the wrapper sits at left/right 2%, so we subtract
-                // that offset (4 % total) plus a 4 % safety margin for italic
-                // character overhang and sub-pixel rounding.
                 const vw = window.innerWidth * 0.92
                 document.fonts.ready.then(() => {
                     fitToWidth(m, vw)
                     fitToWidth(h, vw)
                 })
             } else {
-                // Reset to CSS clamp on desktop
                 m.style.fontSize = ''
                 h.style.fontSize = ''
             }
@@ -73,54 +72,54 @@ export default function Hero({ isLoaded }) {
 
     return (
         <>
-            <section
-                id="hero"
-                ref={container}
-                className="relative sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]"
-            >
-                {/* ── Back name: Mohammad ── */}
-                <motion.div
-                    style={{ y: yTextBack }}
-                    className="absolute z-[5] left-[2%] md:left-[8%] top-[28%] md:top-[30%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
-                >
-                    <motion.h1
-                        initial={{ x: '-40%', opacity: 0 }}
-                        animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
-                        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                        ref={mohammadRef}
-                        className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none"
-                    >
-                        <ItalicAName>Mohammad</ItalicAName>
-                    </motion.h1>
-                </motion.div>
+            {/* Tall wrapper gives scroll distance while the inner section stays pinned */}
+            <div ref={scrollWrapper} id="hero" className="relative h-[250vh]">
+                <section className="sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]">
 
-                {/* ── 3D model ── */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={isLoaded ? { opacity: 1 } : {}}
-                    transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-                    style={{ y: yBg }}
-                    className="absolute inset-0 z-[1]"
-                >
-                    <HeroModel />
-                </motion.div>
-
-                {/* ── Front name: Haider ── */}
-                <motion.div
-                    style={{ y: yTextFront }}
-                    className="absolute z-[15] right-[2%] md:right-[8%] top-[50%] md:top-[50%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
-                >
-                    <motion.h1
-                        initial={{ x: '40%', opacity: 0 }}
-                        animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
-                        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-                        ref={haiderRef}
-                        className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none text-right"
+                    {/* ── Back name: Mohammad ── */}
+                    <motion.div
+                        style={{ y: yTextBack, opacity: textOpacity }}
+                        className="absolute z-[5] left-[2%] md:left-[8%] top-[28%] md:top-[30%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
                     >
-                        <ItalicAName>Haider</ItalicAName>
-                    </motion.h1>
-                </motion.div>
-            </section>
+                        <motion.h1
+                            initial={{ x: '-40%', opacity: 0 }}
+                            animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
+                            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                            ref={mohammadRef}
+                            className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none"
+                        >
+                            <ItalicAName>Mohammad</ItalicAName>
+                        </motion.h1>
+                    </motion.div>
+
+                    {/* ── 3D model ── */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={isLoaded ? { opacity: 1 } : {}}
+                        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                        className="absolute inset-0 z-[1]"
+                    >
+                        <HeroModel audioDataRef={audioDataRef} scrollProgress={scrollYProgress} />
+                    </motion.div>
+
+                    {/* ── Front name: Haider ── */}
+                    <motion.div
+                        style={{ y: yTextFront, opacity: textOpacity }}
+                        className="absolute z-[15] right-[2%] md:right-[8%] top-[50%] md:top-[50%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
+                    >
+                        <motion.h1
+                            initial={{ x: '40%', opacity: 0 }}
+                            animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
+                            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+                            ref={haiderRef}
+                            className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none text-right"
+                        >
+                            <ItalicAName>Haider</ItalicAName>
+                        </motion.h1>
+                    </motion.div>
+
+                </section>
+            </div>
 
             <div id="hero-sentinel" className="h-px w-full bg-transparent" aria-hidden="true" />
         </>

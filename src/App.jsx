@@ -27,6 +27,7 @@ import CustomCursor from './components/CustomCursor'
 import GlobalDigitalEffect from './components/GlobalDigitalEffect'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
+import { useAudioAnalyser } from './hooks/useAudioAnalyser'
 import WhoIAm from './components/WhoIAm'
 import Works from './components/Works'
 import Footer from './components/Footer'
@@ -95,6 +96,7 @@ function MobileBanner() {
 
 function App() {
     const [loaded, setLoaded] = useState(false)
+    const { dataRef: audioDataRef, isMuted, toggleMute } = useAudioAnalyser('/ambience.mp3')
 
     return (
         <>
@@ -138,8 +140,8 @@ function App() {
                     <IdleOverlay isReady={loaded} />
 
                     <main id="main-content" className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
-                        <Hero isLoaded={loaded} />
-                        <Navbar isLoaded={loaded} />
+                        <Hero isLoaded={loaded} audioDataRef={audioDataRef} />
+                        <Navbar isLoaded={loaded} isMuted={isMuted} toggleMute={toggleMute} />
                         <WhoIAm />
                         <Works />
                         <Footer />
