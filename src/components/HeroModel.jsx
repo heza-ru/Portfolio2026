@@ -8,7 +8,19 @@ const lerp = (a, b, t) => a + (b - a) * t
 
 const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
 
-export default function HeroModel({ className = '' }) {
+// ── Scroll-driven camera targets ──────────────────────────────────────────
+// At scroll=0: default view (waist-up model, centered)
+// At scroll=1: zoomed in on face, model pushed left, slight left-turn
+const SCROLL = {
+    camZFrom:    5,
+    camZTo:      2.4,   // zoom in
+    camYFrom:    0,
+    camYTo:      1.4,   // pan up to face
+    modelXTo:   -1.6,   // shift model left
+    rotYOffset:  1,  // model turns slightly right
+}
+
+export default function HeroModel({ className = '', audioDataRef = null, scrollProgress = null }) {
     const containerRef = useRef(null)
 
     useEffect(() => {
@@ -99,11 +111,13 @@ export default function HeroModel({ className = '' }) {
             const rimLight = new THREE.DirectionalLight(0xaabbff, IS_MOBILE ? 1.0 : 0.5)
             rimLight.position.set(3, 3, -5)
             scene.add(rimLight)
+            const baseRimIntensity = IS_MOBILE ? 1.0 : 0.5
 
             const loader = new GLTFLoader()
             loader.setMeshoptDecoder(MeshoptDecoder)
             let modelGroup = null
             let baseY = 0
+            let baseScale = 1
 
             loader.load(
                 '/HeroModel4.glb',
@@ -133,7 +147,8 @@ export default function HeroModel({ className = '' }) {
                     const fovRad = camera.fov * (Math.PI / 180)
                     const fitH = 2 * Math.tan(fovRad / 2) * camera.position.z
 
-                    modelGroup.scale.setScalar((fitH * 2.0) / maxDim)
+                    baseScale = (fitH * 2.0) / maxDim
+                    modelGroup.scale.setScalar(baseScale)
                     modelGroup.position.y -= fitH * 0.5
                     baseY = modelGroup.position.y
 
@@ -184,6 +199,14 @@ export default function HeroModel({ className = '' }) {
             let elapsed = 0
             let lastTime = performance.now()
 
+            // Smoothed audio — triple-low lerp factors so audio never jerks
+            const smooth = { bass: 0, mid: 0, treble: 0, volume: 0 }
+            // Previous smooth values for velocity damping
+            const prev   = { bass: 0, mid: 0, treble: 0, volume: 0 }
+
+            // Smoothed scroll — lerped separately so camera glides, not snaps
+            let scrollSmooth = 0
+
             const animate = () => {
                 rafId = requestAnimationFrame(animate)
                 const now = performance.now()
@@ -191,13 +214,58 @@ export default function HeroModel({ className = '' }) {
                 lastTime = now
                 elapsed += delta
 
-                mouse.x = lerp(mouse.x, target.x, 0.12)
-                mouse.y = lerp(mouse.y, target.y, 0.12)
+                mouse.x = lerp(mouse.x, target.x, 0.08)
+                mouse.y = lerp(mouse.y, target.y, 0.08)
+
+                // Scroll: read framer-motion MotionValue, lerp heavily
+                const scrollRaw = scrollProgress ? scrollProgress.get() : 0
+                scrollSmooth = lerp(scrollSmooth, scrollRaw, 0.035)
+                const s = scrollSmooth
 
                 if (modelGroup) {
-                    modelGroup.rotation.y = mouse.x * 0.5
-                    modelGroup.rotation.x = mouse.y * 0.3
-                    modelGroup.position.y = baseY + Math.sin(elapsed * 0.6) * 0.06
+                    const raw = audioDataRef?.current ?? { bass: 0, mid: 0, treble: 0, volume: 0 }
+
+                    // First lerp pass — slow approach
+                    const b1 = lerp(prev.bass,   raw.bass,   0.015)
+                    const m1 = lerp(prev.mid,    raw.mid,    0.018)
+                    const t1 = lerp(prev.treble, raw.treble, 0.020)
+                    const v1 = lerp(prev.volume, raw.volume, 0.012)
+
+                    // Second lerp pass — smooth out any remaining jitter
+                    smooth.bass   = lerp(smooth.bass,   b1, 0.10)
+                    smooth.mid    = lerp(smooth.mid,    m1, 0.10)
+                    smooth.treble = lerp(smooth.treble, t1, 0.10)
+                    smooth.volume = lerp(smooth.volume, v1, 0.10)
+
+                    prev.bass   = b1
+                    prev.mid    = m1
+                    prev.treble = t1
+                    prev.volume = v1
+
+                    // ── Scroll-driven camera ──────────────────────────────
+                    camera.position.z = lerp(SCROLL.camZFrom, SCROLL.camZTo, s)
+                    camera.position.y = lerp(SCROLL.camYFrom, SCROLL.camYTo, s)
+                    camera.updateProjectionMatrix()
+
+                    // ── Model position: drift left on scroll ──────────────
+                    const targetX = lerp(0, SCROLL.modelXTo, s)
+                    modelGroup.position.x = lerp(modelGroup.position.x, targetX, 0.04)
+
+                    // ── Audio reactions ───────────────────────────────────
+                    // Bass: barely-there scale breathe
+                    modelGroup.scale.setScalar(baseScale * (1 + smooth.bass * 0.04))
+
+                    // Rotation: mouse look + scroll left-turn + mid sway
+                    const rotYTarget = mouse.x * (0.5 + smooth.mid * 0.1) + lerp(0, SCROLL.rotYOffset, s)
+                    modelGroup.rotation.y = lerp(modelGroup.rotation.y, rotYTarget, 0.06)
+                    modelGroup.rotation.x = lerp(modelGroup.rotation.x, mouse.y * 0.3, 0.06)
+
+                    // Bob: dampened by scroll (stops when zoomed in)
+                    const bobAmp = (0.06 + smooth.volume * 0.03) * (1 - s)
+                    modelGroup.position.y = baseY + Math.sin(elapsed * (0.6 + smooth.volume * 0.2)) * bobAmp
+
+                    // Treble: soft rim shimmer
+                    rimLight.intensity = baseRimIntensity + smooth.treble * 0.5
                 }
 
                 renderer.render(scene, camera)

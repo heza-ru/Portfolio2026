@@ -1,8 +1,79 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Menu } from 'lucide-react'
+import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import gsap from 'gsap'
 import HoverChars from './HoverChars'
+
+/* ── Angular icon primitives (square caps, miter joins) ── */
+const sq = { strokeLinecap: 'square', strokeLinejoin: 'miter', fill: 'none', stroke: 'currentColor', strokeWidth: 2 }
+
+function IconMenu() {
+    return (
+        <svg width="14" height="11" viewBox="0 0 14 11" {...sq}>
+            <line x1="0" y1="0.5" x2="14" y2="0.5" />
+            <line x1="0" y1="5.5" x2="14" y2="5.5" />
+            <line x1="0" y1="10.5" x2="14" y2="10.5" />
+        </svg>
+    )
+}
+
+function IconClose() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 18 18" {...sq}>
+            <line x1="1" y1="1" x2="17" y2="17" />
+            <line x1="17" y1="1" x2="1" y2="17" />
+        </svg>
+    )
+}
+
+function IconVolumeOff() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 14 14" {...sq}>
+            <polygon points="1,4 4,4 7,1 7,13 4,10 1,10" />
+            <line x1="10" y1="4" x2="13" y2="10" />
+            <line x1="13" y1="4" x2="10" y2="10" />
+        </svg>
+    )
+}
+
+/* Animated equaliser bars — 4 bars, staggered CSS animations */
+function IconWave() {
+    const bars = [
+        { x: 0,  dur: '0.7s', delay: '0s',     min: 30, max: 90 },
+        { x: 4,  dur: '0.5s', delay: '0.15s',  min: 15, max: 100 },
+        { x: 8,  dur: '0.9s', delay: '0.05s',  min: 40, max: 85 },
+        { x: 12, dur: '0.6s', delay: '0.25s',  min: 20, max: 95 },
+    ]
+    return (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" overflow="visible">
+            {bars.map((b) => (
+                <rect key={b.x} x={b.x} width="2" rx="0" ry="0">
+                    <animate
+                        attributeName="height"
+                        values={`${b.min}%;${b.max}%;${b.min}%`}
+                        dur={b.dur}
+                        begin={b.delay}
+                        repeatCount="indefinite"
+                        calcMode="spline"
+                        keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
+                    />
+                    <animate
+                        attributeName="y"
+                        values={`${(100 - b.min) / 2}%;${(100 - b.max) / 2}%;${(100 - b.min) / 2}%`}
+                        dur={b.dur}
+                        begin={b.delay}
+                        repeatCount="indefinite"
+                        calcMode="spline"
+                        keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
+                    />
+                </rect>
+            ))}
+        </svg>
+    )
+}
+
+function NavSep() {
+    return <div className="h-4 w-px bg-black opacity-25 shrink-0" />
+}
 
 const navLinks = [
     { name: 'Index',   url: '#hero' },
@@ -68,15 +139,59 @@ const SOCIAL_LINKS = [
     { label: 'Email', href: 'mailto:transmission@haider.com' },
 ]
 
-export default function Navbar({ isLoaded }) {
-    const [isOpen, setIsOpen] = useState(false)
+export default function Navbar({ isLoaded, isMuted, toggleMute }) {
+    const [isOpen,     setIsOpen]     = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
+    // navY is a pixel number. Start fully below the viewport.
+    const navY = useMotionValue(typeof window !== 'undefined' ? window.innerHeight : 1000)
+    // Whether the initial entry animation has completed
+    const entryDoneRef = useRef(false)
 
     useEffect(() => {
         const onScroll = () => setIsScrolled(window.scrollY > 40)
         window.addEventListener('scroll', onScroll, { passive: true })
         return () => window.removeEventListener('scroll', onScroll)
     }, [])
+
+    // Entry animation: slide up to sit at the bottom of the viewport
+    useEffect(() => {
+        if (!isLoaded) return
+        const navH = 52
+        const vh = window.innerHeight
+        const ctrl = animate(navY, vh - navH, {
+            duration: 1.6,
+            ease: [0.16, 1, 0.3, 1],
+            delay: 0.8,
+            onComplete: () => { entryDoneRef.current = true },
+        })
+        return () => ctrl.stop()
+    }, [isLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Scroll: once sentinel enters the viewport bottom, attach navbar to it 1:1
+    useEffect(() => {
+        const sentinel = document.getElementById('hero-sentinel')
+        if (!sentinel) return
+
+        const update = () => {
+            if (!entryDoneRef.current) return
+            const vh = window.innerHeight
+            const navH = 52
+            const sentinelTop = sentinel.getBoundingClientRect().top
+
+            // sentinel above viewport — clamp at 0 (stuck to top)
+            // sentinel in viewport   — track it exactly
+            // sentinel below viewport — clamp at vh-navH (stuck to bottom)
+            const y = Math.max(0, Math.min(vh - navH, sentinelTop - navH))
+            navY.set(y)
+        }
+
+        window.addEventListener('scroll', update, { passive: true })
+        window.addEventListener('resize', update, { passive: true })
+        return () => {
+            window.removeEventListener('scroll', update)
+            window.removeEventListener('resize', update)
+        }
+    }, [navY])
 
     /* refs for pixel-block overlay */
     const blockGridRef = useRef(null)
@@ -181,10 +296,8 @@ export default function Navbar({ isLoaded }) {
         <>
             {/* ─────────────── NAV BAR ─────────────── */}
             <motion.nav
-                initial={{ y: 'calc(100vh - 100%)' }}
-                animate={{ y: isLoaded ? 0 : 'calc(100vh - 100%)' }}
-                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: isLoaded ? 0.8 : 0 }}
-                className="sticky top-0 z-[60] w-full -mt-[52px] mix-blend-difference text-black"
+                style={{ y: navY }}
+                className="fixed top-0 z-[60] w-full mix-blend-difference text-black"
             >
                 <div className="flex items-center justify-between px-6 md:px-12 py-4 bg-white w-full">
 
@@ -251,15 +364,26 @@ export default function Navbar({ isLoaded }) {
                         </AnimatePresence>
                     </div>
 
-                    {/* ── RIGHT: Menu (always visible) ── */}
-                    <button
-                        onClick={openMenu}
-                        aria-label="Open menu"
-                        className="flex items-center gap-2 font-mono text-[13px] text-black tracking-widest uppercase font-bold opacity-80 hover:opacity-100 transition-opacity duration-200 outline-none"
-                    >
-                        <Menu size={14} strokeWidth={2.5} />
-                        <span className="hidden sm:inline">Menu</span>
-                    </button>
+                    {/* ── RIGHT: Audio toggle | Menu ── */}
+                    <div className="flex items-center gap-5">
+                        <NavSep />
+                        <button
+                            onClick={toggleMute}
+                            aria-label={isMuted ? 'Unmute ambient audio' : 'Mute ambient audio'}
+                            className="flex items-center opacity-80 hover:opacity-100 transition-opacity duration-200 outline-none"
+                        >
+                            {isMuted ? <IconVolumeOff /> : <IconWave />}
+                        </button>
+                        <NavSep />
+                        <button
+                            onClick={openMenu}
+                            aria-label="Open menu"
+                            className="flex items-center gap-2 font-mono text-[13px] text-black tracking-widest uppercase font-bold opacity-80 hover:opacity-100 transition-opacity duration-200 outline-none"
+                        >
+                            <IconMenu />
+                            <span className="hidden sm:inline">Menu</span>
+                        </button>
+                    </div>
 
                 </div>
             </motion.nav>
@@ -304,7 +428,7 @@ export default function Navbar({ isLoaded }) {
                                 mixBlendMode: 'difference',
                             }}
                         >
-                            <X size={22} strokeWidth={2} />
+                            <IconClose />
                         </button>
                     </div>
 
