@@ -1,0 +1,375 @@
+/* Single article page.
+   Scoped to .logs-article-page — does not affect Labs or the logs index. */
+
+.logs-article-page {
+    --art-ink:       #f0ede8;
+    --art-body:      rgba(240, 237, 232, 0.88);
+    --art-muted:     rgba(240, 237, 232, 0.58);
+    --art-faint:     rgba(240, 237, 232, 0.32);
+    --art-rule:      rgba(240, 237, 232, 0.1);
+    --art-accent:    #c4f542;
+    --art-measure:   660px;
+}
+
+.logs-page.logs-article-page .sp-wrap {
+    max-width: var(--art-measure);
+}
+
+/* ── Article header ──────────────────────────────────────────────── */
+
+.logs-article__head {
+    padding-top: 6.25rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--art-rule);
+    margin-bottom: 0;
+}
+
+.logs-article__breadcrumb {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--art-faint);
+    margin-bottom: 1.5rem;
+}
+
+.logs-article__breadcrumb a {
+    color: var(--art-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.logs-article__breadcrumb a:hover {
+    color: var(--art-accent);
+}
+
+.logs-article__breadcrumb-sep {
+    margin: 0 0.5em;
+    opacity: 0.35;
+}
+
+.logs-article__title {
+    font-family: 'Clash Display', sans-serif;
+    font-size: clamp(1.6rem, 3.8vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+    color: var(--art-ink);
+    margin: 0 0 0.95rem;
+}
+
+.logs-article__deck {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--art-muted);
+    margin: 0 0 1.4rem;
+    max-width: 52ch;
+}
+
+.logs-article__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.logs-article__meta-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--art-faint);
+    line-height: 1.5;
+}
+
+.logs-article__meta-dot {
+    margin: 0 0.4em;
+    opacity: 0.4;
+}
+
+.logs-article__topics {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--art-faint);
+    margin: 0;
+    padding: 0;
+}
+
+.logs-article__topic:not(:last-child)::after {
+    content: ' · ';
+    opacity: 0.35;
+}
+
+/* ── Hero image ──────────────────────────────────────────────────── */
+
+.logs-article__hero {
+    margin: 2rem 0 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--art-rule);
+}
+
+.logs-article__hero-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 480px;
+    object-fit: cover;
+}
+
+/* ── Article / prose wrapper ─────────────────────────────────────── */
+
+.logs-article {
+    padding-top: 2.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.logs-article__prose {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 1.065rem;
+    line-height: 1.75;
+    color: var(--art-body);
+}
+
+/* paragraphs */
+.logs-article__p {
+    margin: 0 0 1.3em;
+}
+
+.logs-article__p:last-child {
+    margin-bottom: 0;
+}
+
+/* inline */
+.logs-article__strong {
+    font-weight: 700;
+    color: var(--art-ink);
+}
+
+.logs-article__em {
+    font-style: italic;
+}
+
+/* headings — Clash Display, stepping down in size */
+.logs-article__h1 {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    color: var(--art-ink);
+    margin: 2.5rem 0 0.65rem;
+}
+
+.logs-article__h2 {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    color: var(--art-ink);
+    margin: 2.5rem 0 0.6rem;
+}
+
+.logs-article__h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--art-faint);
+    margin: 2rem 0 0.5rem;
+}
+
+/* first heading after a <hr> sits closer */
+.logs-article__hr + .logs-article__h2 {
+    margin-top: 1.5rem;
+}
+
+/* thematic break */
+.logs-article__hr {
+    border: none;
+    height: 1px;
+    background: var(--art-rule);
+    margin: 2.5rem 0;
+}
+
+/* lists */
+.logs-article__ul,
+.logs-article__ol {
+    margin: 0 0 1.3em;
+    padding-left: 1.4rem;
+}
+
+.logs-article__ul { list-style: disc; }
+.logs-article__ol { list-style: decimal; }
+
+.logs-article__ul li,
+.logs-article__ol li {
+    margin-bottom: 0.45em;
+    padding-left: 0.25em;
+}
+
+.logs-article__ul li::marker,
+.logs-article__ol li::marker {
+    color: rgba(240, 237, 232, 0.4);
+}
+
+/* blockquote */
+.logs-article__quote {
+    margin: 0 0 1.3em;
+    padding: 0.1rem 0 0.1rem 1.1rem;
+    border-left: 2px solid rgba(196, 245, 66, 0.4);
+    color: var(--art-muted);
+    font-style: italic;
+    font-size: 1.04rem;
+    line-height: 1.7;
+}
+
+.logs-article__quote .logs-article__p:last-child {
+    margin-bottom: 0;
+}
+
+/* links — readable body colour, accent on hover, no full-time lime */
+.logs-article__a {
+    color: var(--art-body);
+    text-decoration: underline;
+    text-decoration-color: rgba(240, 237, 232, 0.25);
+    text-underline-offset: 0.2em;
+    transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.logs-article__a:hover {
+    color: var(--art-accent);
+    text-decoration-color: rgba(196, 245, 66, 0.5);
+}
+
+/* inline code */
+.logs-article__code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.84em;
+    padding: 0.1em 0.38em;
+    border-radius: 3px;
+    background: rgba(240, 237, 232, 0.08);
+    color: rgba(240, 237, 232, 0.92);
+}
+
+/* fenced code block */
+.logs-article__pre {
+    margin: 0 0 1.3em;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    border-radius: 5px;
+    background: rgba(240, 237, 232, 0.05);
+    border: 1px solid var(--art-rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: rgba(240, 237, 232, 0.88);
+}
+
+.logs-article__pre code {
+    font-family: inherit;
+    font-size: inherit;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* images inside the prose body */
+.logs-article__figure {
+    margin: 0.25em 0 1.6em;
+}
+
+.logs-article__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid var(--art-rule);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+/* tables */
+.logs-article__table-wrap {
+    margin: 0 0 1.3em;
+    overflow-x: auto;
+    border-radius: 5px;
+    border: 1px solid var(--art-rule);
+}
+
+.logs-article__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--art-body);
+}
+
+.logs-article__table th,
+.logs-article__table td {
+    border: 1px solid var(--art-rule);
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.logs-article__table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--art-faint);
+    background: rgba(240, 237, 232, 0.04);
+}
+
+/* ── 404 / missing state ─────────────────────────────────────────── */
+
+.logs-article__missing-wrap {
+    padding-top: 6.5rem;
+    padding-bottom: 3rem;
+}
+
+.logs-article__missing-title {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--art-ink);
+    margin: 0.75rem 0 0.65rem;
+}
+
+.logs-article__missing-desc {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--art-muted);
+    margin: 0;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+
+.logs-article-page .sp-footer {
+    margin-top: 3.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--art-rule);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .logs-article__head {
+        padding-top: 5.5rem;
+    }
+
+    .logs-article__hero-img {
+        max-height: 220px;
+    }
+
+    .logs-article__prose {
+        font-size: 1.02rem;
+    }
+}

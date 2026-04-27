@@ -1,89 +1,121 @@
 import { useEffect } from 'react'
+import { POSTS } from '../data/logPosts'
+import { formatStoryDate } from '../utils/logFormat'
 import './subpage.css'
+import './logs-publication.css'
 
-const POSTS = [
-    {
-        id: 1,
-        date: '2026-03-10',
-        dateDisplay: '2026.03.10',
-        title: 'This Portfolio: Building a Cinematic Web Experience',
-        excerpt: 'A deep-dive into building a full 3D portfolio with Three.js, GSAP ScrollTrigger, custom cursor mechanics, Matter.js physics in the footer, and real-time generative effects — deployed to Cloudflare Workers. What worked, what broke, and the tradeoffs that shaped every decision.',
-        tags: ['Three.js', 'GSAP', 'React', 'Vite', 'Cloudflare'],
-        readTime: '8 min',
-        status: 'published',
-    },
-    {
-        id: 2,
-        date: '2025-11-15',
-        dateDisplay: '2025.11.15',
-        title: 'Building Tuneminal: Real-time Audio in the Terminal',
-        excerpt: 'How I built a Go-based karaoke engine with synchronized scrolling lyrics, real-time audio visualisation, and a scoring system — entirely in the terminal, without a single GUI framework. The surprising difficulty of syncing audio playback to rendered frames at 60fps.',
-        tags: ['Go', 'Audio', 'CLI', 'Open Source'],
-        readTime: '6 min',
-        status: 'draft',
-    },
-    {
-        id: 3,
-        date: '2025-10-28',
-        dateDisplay: '2025.10.28',
-        title: 'The Joy of Building Ugly: A Netstalgia Post-Mortem',
-        excerpt: "Deliberately building something terrible is surprisingly hard. A post-mortem on recreating the full 1999 dial-up experience — blinking cursors, pop-ups, a functional guestbook, and a Windows 95 desktop environment in Next.js. Why constraints in the wrong direction are liberating.",
-        tags: ['Next.js', 'Design', 'Nostalgia', 'UX'],
-        readTime: '5 min',
-        status: 'draft',
-    },
-    {
-        id: 4,
-        date: '2025-09-12',
-        dateDisplay: '2025.09.12',
-        title: 'CallScribe: Turning Sales Calls into Structured Work with Claude AI',
-        excerpt: 'Building a browser extension that extracts Mindtickle call transcripts and converts them into JIRA tickets and Productboard insights via Claude. The unexpected challenges of building on top of a live SaaS platform — DOM instability, auth interception, and prompt engineering for structured output.',
-        tags: ['AI', 'React', 'Browser Extension', 'Claude'],
-        readTime: '7 min',
-        status: 'draft',
-    },
-    {
-        id: 5,
-        date: '2026-01-08',
-        dateDisplay: '2026.01.08',
-        title: 'Project Localhost: Self-hosting Everything on a Raspberry Pi 5',
-        excerpt: 'Building a home infrastructure stack — Pi-hole for DNS, Home Assistant for automation, and a locally-running LLM. What works, what breaks, and why cloud dependency is entirely optional for most personal compute. Including a benchmarked comparison of local vs cloud inference latency.',
-        tags: ['Raspberry Pi', 'Self-hosted', 'LLM', 'Infrastructure'],
-        readTime: '10 min',
-        status: 'draft',
-    },
-]
+const AUTHOR = 'Mohammad Haider'
+const FEATURED_STORY_ID = POSTS.find(p => p.status === 'published')?.id ?? null
 
-function LogEntry({ post }) {
+function LogStory({ post, featured }) {
     const isLive = post.status === 'published'
+    const dateLine = formatStoryDate(post.date)
+    const href = `/logs/${post.id}`
+
+    if (featured && post.image) {
+        return (
+            <article
+                className="logs-story logs-story--featured"
+                itemScope
+                itemType="https://schema.org/BlogPosting"
+            >
+                <a href={href} className="logs-story__cover-link" tabIndex={-1} aria-hidden="true">
+                    <div className="logs-story__cover">
+                        <img
+                            src={post.image}
+                            alt=""
+                            className="logs-story__cover-img"
+                            loading="eager"
+                            decoding="async"
+                        />
+                    </div>
+                </a>
+
+                <div className="logs-story__body">
+                    <p className="logs-story__byline">
+                        <span itemProp="author" itemScope itemType="https://schema.org/Person">
+                            <span itemProp="name">{AUTHOR}</span>
+                        </span>
+                        <span className="logs-story__byline-sep" aria-hidden="true">·</span>
+                        <time dateTime={post.date} itemProp="datePublished">{dateLine}</time>
+                        <span className="logs-story__byline-sep" aria-hidden="true">·</span>
+                        <span>{post.readTime} read</span>
+                    </p>
+
+                    <h2 className="logs-story__title" itemProp="headline">
+                        <a href={href}>{post.title}</a>
+                    </h2>
+
+                    <p className="logs-story__deck" itemProp="description">{post.excerpt}</p>
+
+                    <div className="logs-story__topics" aria-label="Topics">
+                        <span className="logs-story__topics-inner">
+                            {post.tags.map(tag => <span key={tag}>{tag}</span>)}
+                        </span>
+                    </div>
+
+                    <div className="logs-story__read">
+                        <a href={href}>Read full story</a>
+                    </div>
+                </div>
+            </article>
+        )
+    }
 
     return (
-        <li className="sp-item">
-            <div className="sp-item-meta">
-                <span>{post.dateDisplay}</span>
-                <span
-                    className={`sp-item-badge ${isLive ? 'sp-item-badge--live' : 'sp-item-badge--draft'}`}
-                >
-                    {isLive ? 'Published' : 'Draft'}
-                </span>
+        <article
+            className="logs-story"
+            itemScope
+            itemType="https://schema.org/BlogPosting"
+        >
+            {/* left column: date stamp */}
+            <time
+                className="logs-story__date"
+                dateTime={post.date}
+                itemProp="datePublished"
+            >
+                {dateLine}
+            </time>
+
+            {/* right column: text */}
+            <div className="logs-story__body">
+                <p className="logs-story__byline">
+                    <span itemProp="author" itemScope itemType="https://schema.org/Person">
+                        <span itemProp="name">{AUTHOR}</span>
+                    </span>
+                    <span className="logs-story__byline-sep" aria-hidden="true">·</span>
+                    <span>{post.readTime} read</span>
+                    {!isLive && (
+                        <>
+                            <span className="logs-story__byline-sep" aria-hidden="true">·</span>
+                            <span className="logs-story__draft-flag">Draft</span>
+                        </>
+                    )}
+                </p>
+
+                <h2 className="logs-story__title" itemProp="headline">
+                    {isLive
+                        ? <a href={href}>{post.title}</a>
+                        : <span className="logs-story__title-text">{post.title}</span>
+                    }
+                </h2>
+
+                <p className="logs-story__deck" itemProp="description">{post.excerpt}</p>
+
+                <div className="logs-story__topics" aria-label="Topics">
+                    <span className="logs-story__topics-inner">
+                        {post.tags.map(tag => <span key={tag}>{tag}</span>)}
+                    </span>
+                </div>
+
+                <div className="logs-story__read">
+                    {isLive
+                        ? <a href={href}>Read full story</a>
+                        : <span className="logs-story__read-soon">Coming soon</span>
+                    }
+                </div>
             </div>
-
-            <h2 className="sp-item-title">{post.title}</h2>
-            <p className="sp-item-cat">{post.readTime} read</p>
-            <p className="sp-item-desc">{post.excerpt}</p>
-
-            <div className="sp-tags">
-                {post.tags.map(tag => (
-                    <span key={tag} className="sp-tag">{tag}</span>
-                ))}
-            </div>
-
-            {isLive ? (
-                <a href={`/logs/${post.id}`} className="sp-item-cta">Read →</a>
-            ) : (
-                <span className="sp-item-soon">Coming Soon</span>
-            )}
-        </li>
+        </article>
     )
 }
 
@@ -93,7 +125,7 @@ export default function Logs() {
     }, [])
 
     return (
-        <>
+        <div className="logs-page">
             <nav className="sp-nav">
                 <a href="/" className="sp-nav-back">← haider.digital</a>
                 <div className="sp-nav-right">
@@ -103,19 +135,25 @@ export default function Logs() {
             </nav>
 
             <div className="sp-wrap">
-                <header className="sp-hero">
-                    <p className="sp-hero-eyebrow">Mohammad Haider · Writing</p>
-                    <h1 className="sp-hero-title">Logs.</h1>
-                    <p className="sp-hero-sub">
+                <header className="logs-masthead">
+                    <p className="logs-masthead__label">Writing</p>
+                    <h1 className="logs-masthead__title">Logs</h1>
+                    <p className="logs-masthead__lede">
                         Notes on building, breaking, and making things. Technical
                         post-mortems, process write-ups, and the occasional opinion.
                     </p>
                 </header>
 
                 <main>
-                    <ul className="sp-list">
-                        {POSTS.map(p => <LogEntry key={p.id} post={p} />)}
-                    </ul>
+                    <div className="logs-feed">
+                        {POSTS.map(p => (
+                            <LogStory
+                                key={p.id}
+                                post={p}
+                                featured={FEATURED_STORY_ID !== null && p.id === FEATURED_STORY_ID}
+                            />
+                        ))}
+                    </div>
                 </main>
 
                 <footer className="sp-footer">
@@ -128,6 +166,6 @@ export default function Logs() {
                     </div>
                 </footer>
             </div>
-        </>
+        </div>
     )
 }

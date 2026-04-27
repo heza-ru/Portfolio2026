@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { getPublishedArticleIds } from '../src/data/logPosts.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
@@ -50,6 +51,16 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+${getPublishedArticleIds()
+        .map(
+            (id) => `  <url>
+    <loc>${siteUrl}/logs/${id}/</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>`,
+        )
+        .join('\n')}
 </urlset>
 `
 

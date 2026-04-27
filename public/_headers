@@ -51,3 +51,11 @@
 /logs/
   Content-Type: text/html; charset=UTF-8
   Cache-Control: public, max-age=0, must-revalidate
+
+/logs/1/
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: public, max-age=0, must-revalidate
+
+/logs/7/
+  Content-Type: text/html; charset=UTF-8
+  Cache-Control: public, max-age=0, must-revalidate

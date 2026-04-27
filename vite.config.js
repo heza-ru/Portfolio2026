@@ -1,11 +1,21 @@
-import { copyFileSync, existsSync } from 'fs'
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { getPublishedArticleIds } from './src/data/logPosts.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname)
+
+function logArticleHtmlInputs() {
+    return Object.fromEntries(
+        getPublishedArticleIds().map(id => [
+            `logs-${id}`,
+            resolve(__dirname, `logs/${id}/index.html`),
+        ]),
+    )
+}
 
 /** Copy OG preview image to public so /og-image.png is a stable absolute URL for meta tags. */
 function copyOgImageFromSnapshot() {
@@ -16,6 +26,28 @@ function copyOgImageFromSnapshot() {
         return
     }
     copyFileSync(src, dest)
+}
+
+/** Copy `logs/articles/{id}/images/` into dist so `/logs/articles/...` URLs work in production. */
+function copyLogArticleImagesToDist() {
+    const articlesRoot = resolve(root, 'logs/articles')
+    if (!existsSync(articlesRoot)) {
+        return
+    }
+    const distArticles = resolve(root, 'dist/logs/articles')
+    for (const dirent of readdirSync(articlesRoot, { withFileTypes: true })) {
+        if (!dirent.isDirectory()) {
+            continue
+        }
+        const id = dirent.name
+        const from = resolve(articlesRoot, id, 'images')
+        if (!existsSync(from) || !statSync(from).isDirectory()) {
+            continue
+        }
+        const to = resolve(distArticles, id, 'images')
+        mkdirSync(resolve(distArticles, id), { recursive: true })
+        cpSync(from, to, { recursive: true })
+    }
 }
 
 // https://vite.dev/config/
@@ -35,9 +67,19 @@ export default defineConfig(({ mode }) => {
                 name: 'subpage-routing',
                 configureServer(server) {
                     server.middlewares.use((req, _res, next) => {
-                        if (req.url === '/labs' || req.url === '/labs/')         req.url = '/labs/index.html'
-                        else if (req.url === '/logs' || req.url === '/logs/')    req.url = '/logs/index.html'
-                        else if (req.url === '/404' || req.url === '/404.html')  req.url = '/404.html'
+                        const raw = req.url || '/'
+                        const q = raw.includes('?') ? `?${raw.split('?')[1]}` : ''
+                        const pathOnly = raw.split('?')[0]
+                        const logArticle = pathOnly.match(/^\/logs\/(\d+)\/?$/)
+                        if (logArticle) {
+                            req.url = `/logs/${logArticle[1]}/index.html${q}`
+                        } else if (pathOnly === '/labs' || pathOnly === '/labs/') {
+                            req.url = `/labs/index.html${q}`
+                        } else if (pathOnly === '/logs' || pathOnly === '/logs/') {
+                            req.url = `/logs/index.html${q}`
+                        } else if (pathOnly === '/404' || pathOnly === '/404.html') {
+                            req.url = `/404.html${q}`
+                        }
                         next()
                     })
                 },
@@ -57,6 +99,12 @@ export default defineConfig(({ mode }) => {
                     return html.replace(/%SITE_URL%/g, siteUrl)
                 },
             },
+            {
+                name: 'copy-log-article-images',
+                writeBundle() {
+                    copyLogArticleImagesToDist()
+                },
+            },
         ],
         build: {
             rollupOptions: {
@@ -65,6 +113,7 @@ export default defineConfig(({ mode }) => {
                     labs:       resolve(__dirname, 'labs/index.html'),
                     logs:       resolve(__dirname, 'logs/index.html'),
                     notFound:   resolve(__dirname, '404.html'),
+                    ...logArticleHtmlInputs(),
                 },
             },
         },
