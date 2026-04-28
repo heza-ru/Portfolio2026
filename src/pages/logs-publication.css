@@ -7,7 +7,7 @@
     --logs-faint:      rgba(240, 237, 232, 0.32);
     --logs-rule:       rgba(240, 237, 232, 0.1);
     --logs-accent:     #c4f542;
-    --logs-width:      680px;
+    --logs-width:      860px;
 }
 
 .logs-page .sp-wrap {
@@ -48,7 +48,7 @@
     font-size: 0.97rem;
     line-height: 1.6;
     color: var(--logs-muted);
-    max-width: 44ch;
+    max-width: 52ch;
 }
 
 /* ── Feed ────────────────────────────────────────────────────────── */
@@ -110,7 +110,7 @@
 
 .logs-story--featured .logs-story__deck {
     font-size: 1.0rem;
-    max-width: 58ch;
+    max-width: 64ch;
     margin-bottom: 0.9rem;
 }
 
@@ -194,7 +194,7 @@
     line-height: 1.65;
     color: var(--logs-muted);
     margin-bottom: 0.7rem;
-    max-width: 56ch;
+    max-width: 62ch;
 }
 
 .logs-story__topics {

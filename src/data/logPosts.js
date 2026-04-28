@@ -10,7 +10,7 @@ export const POSTS = [
             'Hermes Agent (Nous Research) and OpenClaw embody two answers to what an AI agent should be: one that improves with experience versus one that orchestrates tools from day one. Benchmarks, operational tradeoffs, security, and why teams are pairing both.',
         tags: ['AI Agents', 'Hermes', 'OpenClaw', 'Nous Research', 'Developer Tools', 'Security'],
         readTime: '15 min',
-        image: '/logs/articles/7/images/hero.png',
+        image: '/logs/articles/7/images/hero.avif',
         status: 'published',
     },
     {
