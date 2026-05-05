@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { getPostById } from '../data/logPosts'
 import { formatStoryDate } from '../utils/logFormat'
 import { LogArticleContent, hasArticleMarkdown } from './logArticleContent'
+import { getArticleMarkdown, longformLeadingH1Text } from './logArticleSources'
 import './subpage.css'
 import './logs-publication.css'
 import './log-article.css'
@@ -38,6 +39,9 @@ export default function LogArticle({ postId }) {
     const post = Number.isFinite(postId) ? getPostById(postId) : null
     const ok = Boolean(post && post.status === 'published')
     const hasLongform = ok && hasArticleMarkdown(postId)
+    const mdLeadH1 =
+        hasLongform ? longformLeadingH1Text(getArticleMarkdown(postId)) : null
+    const hideChromeTitle = Boolean(mdLeadH1 && mdLeadH1 === post?.title)
 
     useEffect(() => {
         document.title = ok && post
@@ -78,7 +82,9 @@ export default function LogArticle({ postId }) {
                         <time dateTime={post.date}>{formatStoryDate(post.date)}</time>
                     </p>
 
-                    <h1 className="logs-article__title">{post.title}</h1>
+                    {!hideChromeTitle && (
+                        <h1 className="logs-article__title">{post.title}</h1>
+                    )}
                     <p className="logs-article__deck">{post.excerpt}</p>
 
                     <div className="logs-article__meta">
@@ -115,7 +121,13 @@ export default function LogArticle({ postId }) {
 
                 {/* ── Body prose ─────────────────────────────────────── */}
                 <article className="logs-article">
-                    <div className="logs-article__prose">
+                    <div
+                        className={
+                            hideChromeTitle
+                                ? 'logs-article__prose logs-article__prose--md-lead-title'
+                                : 'logs-article__prose'
+                        }
+                    >
                         {hasLongform
                             ? <LogArticleContent postId={postId} />
                             : <p>Full story coming soon.</p>

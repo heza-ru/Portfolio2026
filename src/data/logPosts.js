@@ -2,6 +2,18 @@
 
 export const POSTS = [
     {
+        id: 8,
+        date: '2026-05-06',
+        dateDisplay: '2026.05.06',
+        title: 'Goblins in the Machine: I Watched ChatGPT Get Weird, and OpenAI Finally Explained Why',
+        excerpt:
+            'When “goblin” showed up in debug threads and marketing drafts alike, it looked like a joke—until OpenAI charted the spike, traced the Nerdy personality reward signal, and showed how RL generalizes tics into agents. A story about what we reward versus what we mean.',
+        tags: ['OpenAI', 'ChatGPT', 'RLHF', 'Alignment', 'AI Agents', 'ML'],
+        readTime: '11 min',
+        image: '/logs/articles/8/images/hero.avif',
+        status: 'published',
+    },
+    {
         id: 7,
         date: '2026-04-28',
         dateDisplay: '2026.04.28',

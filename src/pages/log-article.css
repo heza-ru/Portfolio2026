@@ -134,6 +134,15 @@
     color: var(--art-body);
 }
 
+/* Markdown opens with # and matches post.title — that heading is the page headline */
+.logs-article__prose--md-lead-title > .logs-article__h1:first-child {
+    font-size: clamp(1.6rem, 3.8vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+    margin: 2rem 0 0.95rem;
+}
+
 /* paragraphs */
 .logs-article__p {
     margin: 0 0 1.3em;

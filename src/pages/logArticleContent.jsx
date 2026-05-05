@@ -55,18 +55,38 @@ const markdownComponents = {
             </code>
         )
     },
-    img: ({ src, alt, title }) => (
-        <figure className="logs-article__figure">
-            <img
-                className="logs-article__img"
-                src={src}
-                alt={alt ?? ''}
-                title={title}
-                loading="lazy"
-                decoding="async"
-            />
-        </figure>
-    ),
+    img: ({ src, alt, title }) => {
+        const pngFallback =
+            typeof src === 'string' && src.endsWith('.avif')
+                ? src.replace(/\.avif$/, '.png')
+                : null
+        return (
+            <figure className="logs-article__figure">
+                {pngFallback ? (
+                    <picture>
+                        <source srcSet={src} type="image/avif" />
+                        <img
+                            className="logs-article__img"
+                            src={pngFallback}
+                            alt={alt ?? ''}
+                            title={title}
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    </picture>
+                ) : (
+                    <img
+                        className="logs-article__img"
+                        src={src}
+                        alt={alt ?? ''}
+                        title={title}
+                        loading="lazy"
+                        decoding="async"
+                    />
+                )}
+            </figure>
+        )
+    },
     table: props => (
         <div className="logs-article__table-wrap">
             <table className="logs-article__table" {...mdProps(props)} />
