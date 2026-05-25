@@ -17,8 +17,8 @@
 /* ── Masthead ────────────────────────────────────────────────────── */
 
 .logs-page .logs-masthead {
-    padding-top: 6.5rem;
-    padding-bottom: 2.25rem;
+    padding-top: 7rem;
+    padding-bottom: 2.75rem;
     border-bottom: 1px solid var(--logs-rule);
     margin-bottom: 0;
 }
@@ -35,12 +35,12 @@
 
 .logs-masthead__title {
     font-family: 'Clash Display', sans-serif;
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-size: clamp(4rem, 10vw, 8rem);
     font-weight: 700;
     letter-spacing: -0.035em;
-    line-height: 1.0;
+    line-height: 0.92;
     color: var(--logs-ink);
-    margin-bottom: 0.9rem;
+    margin-bottom: 1.1rem;
 }
 
 .logs-masthead__lede {
@@ -247,8 +247,8 @@
 
 @media (max-width: 600px) {
     .logs-page .logs-masthead {
-        padding-top: 5.5rem;
-        padding-bottom: 1.75rem;
+        padding-top: 6rem;
+        padding-bottom: 2rem;
     }
 
     .logs-story:not(.logs-story--featured) {

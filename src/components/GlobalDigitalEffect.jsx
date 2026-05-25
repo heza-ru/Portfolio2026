@@ -18,6 +18,7 @@ function getRandomSymbol() {
 export default function GlobalDigitalEffect() {
     const overlayRef = useRef(null)
     const blocksRef = useRef([])
+    const gridMapRef = useRef([])
     const rafRef = useRef(null)
     const isMobile = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
@@ -36,6 +37,7 @@ export default function GlobalDigitalEffect() {
             const rows = Math.ceil(height / config.blockSize)
 
             const blocks = []
+            const gridMap = []
 
             // Create grid blocks
             for (let row = 0; row < rows; row++) {
@@ -62,7 +64,7 @@ export default function GlobalDigitalEffect() {
 
                     overlay.appendChild(block)
 
-                    blocks.push({
+                    const blockData = {
                         element: block,
                         x: col * config.blockSize + config.blockSize / 2,
                         y: row * config.blockSize + config.blockSize / 2,
@@ -73,14 +75,22 @@ export default function GlobalDigitalEffect() {
                         shouldScramble: !isEmpty && Math.random() < config.scrambleRatio,
                         scrambleInterval: null,
                         isActive: false,
-                    })
+                    }
+
+                    blocks.push(blockData)
+
+                    // Build gridMap for O(1) neighbor lookup
+                    if (!gridMap[row]) gridMap[row] = []
+                    gridMap[row][col] = blockData
                 }
             }
 
-            return blocks
+            return { blocks, gridMap }
         }
 
-        blocksRef.current = initGrid()
+        const { blocks: initialBlocks, gridMap: initialGridMap } = initGrid()
+        blocksRef.current = initialBlocks
+        gridMapRef.current = initialGridMap
 
         // Mouse position tracking
         let mouseX = 0
@@ -108,25 +118,27 @@ export default function GlobalDigitalEffect() {
         // Main animation loop - processes grid updates and activations
         const processGridActivation = () => {
             const blocks = blocksRef.current
+            const gridMap = gridMapRef.current
             const currentTime = Date.now()
 
-            // Find closest block to mouse
+            // Find closest block to mouse using squared distances (avoids Math.sqrt per frame)
             let closestBlock = null
-            let closestDistance = Infinity
+            let closestDistSq = Infinity
+            const detectionRadiusSq = config.detectionRadius * config.detectionRadius
 
             for (const block of blocks) {
                 const dx = mouseX - block.x
                 const dy = mouseY - block.y
-                const distance = Math.sqrt(dx * dx + dy * dy)
+                const distSq = dx * dx + dy * dy
 
-                if (distance < closestDistance) {
-                    closestDistance = distance
+                if (distSq < closestDistSq) {
+                    closestDistSq = distSq
                     closestBlock = block
                 }
             }
 
             // Activate block if within radius
-            if (closestBlock && closestDistance <= config.detectionRadius) {
+            if (closestBlock && closestDistSq <= detectionRadiusSq) {
                 if (!closestBlock.isActive) {
                     closestBlock.isActive = true
                     closestBlock.element.classList.add('active')
@@ -144,14 +156,19 @@ export default function GlobalDigitalEffect() {
                     const activeBlocks = [closestBlock]
 
                     for (let i = 0; i < clusterCount; i++) {
-                        const neighbors = blocks.filter((neighbor) => {
-                            if (activeBlocks.includes(neighbor)) return false
-
-                            const dx = Math.abs(neighbor.gridX - currentBlock.gridX)
-                            const dy = Math.abs(neighbor.gridY - currentBlock.gridY)
-
-                            return dx <= 1 && dy <= 1
-                        })
+                        // O(1) neighbor lookup via gridMap instead of O(n) filter
+                        const neighbors = []
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const row = gridMap[currentBlock.gridY + dy]
+                            if (!row) continue
+                            for (let dx = -1; dx <= 1; dx++) {
+                                if (dx === 0 && dy === 0) continue
+                                const neighbor = row[currentBlock.gridX + dx]
+                                if (neighbor && !activeBlocks.includes(neighbor)) {
+                                    neighbors.push(neighbor)
+                                }
+                            }
+                        }
 
                         if (neighbors.length === 0) break
 
@@ -213,7 +230,9 @@ export default function GlobalDigitalEffect() {
                     }
                 })
                 // Reinitialize grid
-                blocksRef.current = initGrid()
+                const { blocks: newBlocks, gridMap: newGridMap } = initGrid()
+                blocksRef.current = newBlocks
+                gridMapRef.current = newGridMap
             }, 250)
         }
 

@@ -106,16 +106,13 @@ export default function LogArticle({ postId }) {
                 {/* ── Hero image (above prose, outside markdown) ─────── */}
                 {post.image && (
                     <div className="logs-article__hero">
-                        <picture>
-                            <source srcSet={post.image} type="image/avif" />
-                            <img
-                                src={post.image.replace(/\.avif$/, '.png')}
-                                alt={post.title}
-                                className="logs-article__hero-img"
-                                loading="eager"
-                                decoding="async"
-                            />
-                        </picture>
+                        <img
+                            src={post.image}
+                            alt={post.title}
+                            className="logs-article__hero-img"
+                            loading="eager"
+                            decoding="async"
+                        />
                     </div>
                 )}
 

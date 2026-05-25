@@ -45,6 +45,9 @@ public/og-image.png
 # Cloudflare Wrangler
 .wrangler/
 
+# Superpowers plugin cache
+.superpowers/
+
 # Misc
 *.tsbuildinfo
 .cache/

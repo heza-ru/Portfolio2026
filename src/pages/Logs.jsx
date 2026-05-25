@@ -21,16 +21,13 @@ function LogStory({ post, featured }) {
             >
                 <a href={href} className="logs-story__cover-link" tabIndex={-1} aria-hidden="true">
                     <div className="logs-story__cover">
-                        <picture>
-                            <source srcSet={post.image} type="image/avif" />
-                            <img
-                                src={post.image.replace(/\.avif$/, '.png')}
-                                alt=""
-                                className="logs-story__cover-img"
-                                loading="eager"
-                                decoding="async"
-                            />
-                        </picture>
+                        <img
+                            src={post.image}
+                            alt=""
+                            className="logs-story__cover-img"
+                            loading="eager"
+                            decoding="async"
+                        />
                     </div>
                 </a>
 

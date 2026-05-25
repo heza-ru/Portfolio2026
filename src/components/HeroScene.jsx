@@ -167,27 +167,35 @@ export default function HeroScene({ className = '' }) {
         const target = { x: 0.5, y: 0.5 }
         const lerp   = (a, b, t) => a + (b - a) * t
 
+        let lastMouseTime = 0
         const onMouseMove = (e) => {
+            const now = performance.now()
+            if (now - lastMouseTime < 16) return
+            lastMouseTime = now
             target.x = e.clientX / window.innerWidth
             target.y = 1.0 - e.clientY / window.innerHeight
         }
         window.addEventListener('mousemove', onMouseMove)
 
         // ── Resize ────────────────────────────────────────────────────────────
+        let resizeTimeout
         const onResize = () => {
-            w = container.clientWidth
-            h = container.clientHeight
-            renderer.setSize(w, h)
-            modelCamera.aspect = w / h
-            modelCamera.updateProjectionMatrix()
+            clearTimeout(resizeTimeout)
+            resizeTimeout = setTimeout(() => {
+                w = container.clientWidth
+                h = container.clientHeight
+                renderer.setSize(w, h)
+                modelCamera.aspect = w / h
+                modelCamera.updateProjectionMatrix()
 
-            renderTarget.dispose()
-            renderTarget = new THREE.WebGLRenderTarget(w, h, {
-                minFilter: THREE.LinearFilter,
-                magFilter: THREE.LinearFilter,
-                format:    THREE.RGBAFormat,
-            })
-            glassMaterial.uniforms.uTexture.value = renderTarget.texture
+                renderTarget.dispose()
+                renderTarget = new THREE.WebGLRenderTarget(w, h, {
+                    minFilter: THREE.LinearFilter,
+                    magFilter: THREE.LinearFilter,
+                    format:    THREE.RGBAFormat,
+                })
+                glassMaterial.uniforms.uTexture.value = renderTarget.texture
+            }, 250)
         }
         window.addEventListener('resize', onResize)
 
@@ -230,6 +238,7 @@ export default function HeroScene({ className = '' }) {
         // ── Cleanup ───────────────────────────────────────────────────────────
         return () => {
             cancelAnimationFrame(rafId)
+            clearTimeout(resizeTimeout)
             window.removeEventListener('mousemove', onMouseMove)
             window.removeEventListener('resize', onResize)
             renderTarget.dispose()

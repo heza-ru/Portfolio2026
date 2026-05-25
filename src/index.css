@@ -734,7 +734,7 @@
 
     .works-header {
       flex-direction: column;
-      gap: 0;
+      gap: 0.15em;
       margin-bottom: 4rem;
     }
 

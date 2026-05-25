@@ -1,4 +1,4 @@
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { defineConfig, loadEnv } from 'vite'
@@ -45,8 +45,14 @@ function copyLogArticleImagesToDist() {
             continue
         }
         const to = resolve(distArticles, id, 'images')
-        mkdirSync(resolve(distArticles, id), { recursive: true })
-        cpSync(from, to, { recursive: true })
+        mkdirSync(to, { recursive: true })
+        for (const file of readdirSync(from)) {
+            if (file.endsWith('.png')) continue
+            const src = resolve(from, file)
+            if (statSync(src).isFile()) {
+                copyFileSync(src, resolve(to, file))
+            }
+        }
     }
 }
 
@@ -114,6 +120,14 @@ export default defineConfig(({ mode }) => {
                     logs:       resolve(__dirname, 'logs/index.html'),
                     notFound:   resolve(__dirname, '404.html'),
                     ...logArticleHtmlInputs(),
+                },
+                output: {
+                    manualChunks: {
+                        'vendor-three': ['three'],
+                        'vendor-gsap': ['gsap'],
+                        'vendor-motion': ['framer-motion'],
+                        'vendor-react': ['react', 'react-dom'],
+                    },
                 },
             },
         },
