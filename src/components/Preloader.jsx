@@ -24,6 +24,16 @@ function fitToWidth(el, maxWidth) {
     return Math.floor(lo)
 }
 
+/* Fonts often hang forever in in-app WebViews (Luma, Instagram, etc.) when
+   Google Fonts / Fontshare are blocked or deferred. Never wait unbounded. */
+function fontsReadyOrTimeout(ms = 700) {
+    if (!document.fonts?.ready) return Promise.resolve()
+    return Promise.race([
+        document.fonts.ready.catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, ms)),
+    ])
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    Shared markup used in BOTH overlay layers (primary + mirror).
    ───────────────────────────────────────────────────────────────────────────── */
@@ -45,18 +55,49 @@ export default function Preloader({ onComplete }) {
         gsap.registerPlugin(CustomEase)
         CustomEase.create('hop', '.8, 0, .3, 1')
         document.body.style.overflow = 'hidden'
+        document.documentElement.classList.add('pl-active')
 
         let tl
         let cancelled = false
+        let completed = false
+
+        const finish = () => {
+            if (completed || cancelled) return
+            completed = true
+            document.body.style.overflow = ''
+            document.documentElement.classList.remove('pl-active')
+            onComplete?.()
+        }
+
+        /* Hard failsafe — never leave users stuck on a blank white screen in
+           WebViews that pause RAF / hide the document on first paint. */
+        const failsafe = setTimeout(() => {
+            if (cancelled || completed) return
+            tl?.kill()
+            gsap.set(['.pl-preloader', '.pl-split-overlay', '.pl-cut-line'], {
+                autoAlpha: 0,
+                pointerEvents: 'none',
+            })
+            finish()
+        }, 5200)
 
         ;(async () => {
-            // Wait for Instrument Serif to be fully loaded before measuring
-            await document.fonts.ready
+            // Wake GSAP if the WebView reported document.hidden on load
+            // (common in Luma / Instagram / LinkedIn in-app browsers).
+            try { gsap.ticker.wake() } catch { /* older GSAP — ignore */ }
+
+            await fontsReadyOrTimeout(700)
             if (cancelled) return
 
-            const W = window.innerWidth * 0.97 // ~1.5% breathing room each side
+            // One more wake after the await — visibility may have flipped.
+            try { gsap.ticker.wake() } catch { /* ignore */ }
 
-            // Fit in primary layer, then mirror all instances
+            // Show fallback-sized type immediately so WebViews never sit on a
+            // blank white sheet while we measure / schedule the timeline.
+            gsap.set('.pl-text', { visibility: 'visible', opacity: 1 })
+
+            const W = Math.min(window.innerWidth, window.visualViewport?.width || window.innerWidth) * 0.97
+
             const niceSize = fitToWidth(document.querySelector('.pl-preloader .pl-nice-text'), W)
             const imSize   = fitToWidth(document.querySelector('.pl-preloader .pl-im-text'),   W)
 
@@ -65,48 +106,53 @@ export default function Preloader({ onComplete }) {
 
             if (cancelled) return
 
-            // Reveal all text at correct size before GSAP takes over (prevents
-            // the one-frame flash where text is briefly visible at CSS default size)
-            gsap.set('.pl-text', { visibility: 'visible' })
-
-            // Primary layer starts below its half-section clip
             gsap.set('.pl-preloader .pl-nice-text', { y: '140%' })
             gsap.set('.pl-preloader .pl-im-text',   { y: '140%' })
 
-            // Mirror layer: visible at resting position (im shifted down slightly)
             gsap.set('.pl-split-overlay .pl-nice-text', { y: '0%' })
             gsap.set('.pl-split-overlay .pl-im-text',   { y: '20%' })
 
-            tl = gsap.timeline({ defaults: { ease: 'hop' } })
+            tl = gsap.timeline({
+                defaults: { ease: 'hop' },
+                // Keep the timeline advancing even if the page briefly reports hidden
+                // during WebView bootstrap (otherwise the intro never plays).
+                onComplete: () => {
+                    clearTimeout(failsafe)
+                    finish()
+                },
+            })
+
+            // If the tab is still hidden when we build the timeline, force a
+            // short delayed restart once it becomes visible so users see it.
+            const maybeRestartOnVisible = () => {
+                if (cancelled || completed) return
+                if (!document.hidden) return
+                const onVis = () => {
+                    if (document.hidden || cancelled || completed) return
+                    document.removeEventListener('visibilitychange', onVis)
+                    try { gsap.ticker.wake() } catch { /* ignore */ }
+                    // If we haven't gotten past the first beat, restart from 0
+                    if (tl && tl.progress() < 0.05) {
+                        tl.restart(true, false)
+                    }
+                }
+                document.addEventListener('visibilitychange', onVis)
+            }
+            maybeRestartOnVisible()
 
             tl
-                // ── Curtain-reveal "Nice to meet you" ─────────────────────
                 .to('.pl-preloader .pl-nice-text', { y: '0%', duration: 1.3 }, 0.15)
-
-                // ── Curtain-reveal "I'm" — lands 20% below centre ─────────
                 .to('.pl-preloader .pl-im-text',   { y: '20%', duration: 1.3 }, 0.38)
-
-                // ── Hold, then cut line sweeps ─────────────────────────────
                 .to('.pl-cut-line', { scaleX: 1, duration: 0.55 }, 2.1)
-
-                // ── Clip each overlay to its half ──────────────────────────
                 .set('.pl-preloader',     { clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }, 2.65)
                 .set('.pl-split-overlay', { clipPath: 'polygon(0 50%, 100% 50%, 100% 100%, 0 100%)' }, 2.65)
-
-                // ── Fade cut line ──────────────────────────────────────────
                 .to('.pl-cut-line', { opacity: 0, duration: 0.35 }, 3.35)
-
-                // ── Split departure ────────────────────────────────────────
                 .to(
                     ['.pl-preloader', '.pl-split-overlay'],
                     {
                         y:        (i) => (i === 0 ? '-50%' : '50%'),
                         duration: 1,
                         ease:     'hop',
-                        onComplete: () => {
-                            document.body.style.overflow = ''
-                            onComplete?.()
-                        },
                     },
                     3.35,
                 )
@@ -114,16 +160,18 @@ export default function Preloader({ onComplete }) {
 
         return () => {
             cancelled = true
+            clearTimeout(failsafe)
             tl?.kill()
             document.body.style.overflow = ''
+            document.documentElement.classList.remove('pl-active')
         }
     }, [onComplete])
 
     return (
         <>
-            <div className="pl-preloader">  <Layers /> </div>
-            <div className="pl-split-overlay"><Layers /> </div>
-            <div className="pl-cut-line" />
+            <div className="pl-preloader" aria-hidden="true">  <Layers /> </div>
+            <div className="pl-split-overlay" aria-hidden="true"><Layers /> </div>
+            <div className="pl-cut-line" aria-hidden="true" />
         </>
     )
 }

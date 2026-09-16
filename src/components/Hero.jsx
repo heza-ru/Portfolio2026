@@ -47,6 +47,8 @@ export default function Hero({ isLoaded, audioDataRef }) {
 
     /* ── Mobile-only: fit each name to fill the viewport width ── */
     useEffect(() => {
+        let cancelled = false
+
         function sizeNames() {
             const isMobile = window.innerWidth < 768
             const m = mohammadRef.current
@@ -54,11 +56,22 @@ export default function Hero({ isLoaded, audioDataRef }) {
             if (!m || !h) return
 
             if (isMobile) {
-                const vw = window.innerWidth * 0.92
-                document.fonts.ready.then(() => {
+                const vw = Math.min(window.innerWidth, window.visualViewport?.width || window.innerWidth) * 0.88
+                const apply = () => {
+                    if (cancelled) return
                     fitToWidth(m, vw)
                     fitToWidth(h, vw)
-                })
+                }
+                // Don't hang forever if fonts.ready never resolves in WebViews
+                const fonts = document.fonts?.ready
+                if (fonts) {
+                    Promise.race([
+                        fonts.catch(() => {}),
+                        new Promise((r) => setTimeout(r, 800)),
+                    ]).then(apply)
+                } else {
+                    apply()
+                }
             } else {
                 m.style.fontSize = ''
                 h.style.fontSize = ''
@@ -67,26 +80,29 @@ export default function Hero({ isLoaded, audioDataRef }) {
 
         sizeNames()
         window.addEventListener('resize', sizeNames, { passive: true })
-        return () => window.removeEventListener('resize', sizeNames)
+        return () => {
+            cancelled = true
+            window.removeEventListener('resize', sizeNames)
+        }
     }, [])
 
     return (
         <>
             {/* Tall wrapper gives scroll distance while the inner section stays pinned */}
-            <div ref={scrollWrapper} id="hero" className="relative h-[250vh]">
-                <section className="sticky top-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]">
+            <div ref={scrollWrapper} id="hero" className="relative z-0 h-[200dvh] md:h-[250vh]">
+                <section className="hero-sticky sticky top-0 z-0 h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-[#0A0A0A]">
 
                     {/* ── Back name: Mohammad ── */}
                     <motion.div
                         style={{ y: yTextBack, opacity: textOpacity }}
-                        className="absolute z-[5] left-[2%] md:left-[8%] top-[28%] md:top-[30%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
+                        className="absolute z-[5] left-[5%] md:left-[8%] top-[18%] md:top-[30%] pointer-events-none mix-blend-difference max-w-[90vw] overflow-hidden"
                     >
                         <motion.h1
                             initial={{ x: '-40%', opacity: 0 }}
                             animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
                             transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
                             ref={mohammadRef}
-                            className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none"
+                            className="text-[clamp(2.6rem,13vw,14rem)] leading-[0.9] text-white select-none"
                         >
                             <ItalicAName>Mohammad</ItalicAName>
                         </motion.h1>
@@ -105,14 +121,14 @@ export default function Hero({ isLoaded, audioDataRef }) {
                     {/* ── Front name: Haider ── */}
                     <motion.div
                         style={{ y: yTextFront, opacity: textOpacity }}
-                        className="absolute z-[15] right-[2%] md:right-[8%] top-[50%] md:top-[50%] pointer-events-none mix-blend-difference max-w-[96vw] overflow-hidden"
+                        className="absolute z-[15] right-[5%] md:right-[8%] top-[62%] md:top-[50%] pointer-events-none mix-blend-difference max-w-[90vw] overflow-hidden"
                     >
                         <motion.h1
                             initial={{ x: '40%', opacity: 0 }}
                             animate={isLoaded ? { x: '0%', opacity: 1 } : {}}
                             transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
                             ref={haiderRef}
-                            className="text-[clamp(2.8rem,14vw,14rem)] leading-none text-white select-none text-right"
+                            className="text-[clamp(2.6rem,13vw,14rem)] leading-[0.9] text-white select-none text-right"
                         >
                             <ItalicAName>Haider</ItalicAName>
                         </motion.h1>

@@ -48,10 +48,15 @@ export default function WhoIAm() {
             brightEl.style.visibility = 'visible'
         }
 
-        document.fonts.ready.then(() => {
-            sizeBio()
-            window.addEventListener('resize', sizeBio, { passive: true })
-        })
+        document.fonts?.ready
+            ? Promise.race([
+                document.fonts.ready.catch(() => {}),
+                new Promise((r) => setTimeout(r, 800)),
+              ]).then(() => {
+                sizeBio()
+                window.addEventListener('resize', sizeBio, { passive: true })
+              })
+            : (sizeBio(), window.addEventListener('resize', sizeBio, { passive: true }))
 
         const ctx = gsap.context(() => {
 
@@ -70,9 +75,9 @@ export default function WhoIAm() {
                 trigger: rolesEl,
                 start:   'top bottom',
                 end:     'top top',
-                scrub:   1,
+                scrub:   IS_MOBILE ? 0.35 : 1,
                 onUpdate(self) {
-                    const p = self.progress
+                    const p = Math.min(1, Math.max(0, self.progress))
                     gsap.set(rows[0], { x: `${ 110 - p * 110}%` })
                     gsap.set(rows[1], { x: `${-110 + p * 110}%` })
                     gsap.set(rows[2], { x: `${ 110 - p * 110}%` })
@@ -80,61 +85,88 @@ export default function WhoIAm() {
             })
 
             /* ── 2. Role rows — pin + outer exit + DESIGNER scale & fade ────────
-               Shorter scroll distance (1.2 × vh) so the outro finishes quickly.
-               Second half: DESIGNER scales down AND fades to nothing.          */
+               Shorter scroll distance on mobile so the cover → about handoff
+               feels as brisk as desktop. Soft scrub (0.35) matches desktop’s
+               eased scrub without the 1-frame hitch of scrub:true.           */
             ScrollTrigger.create({
                 trigger:             rolesEl,
                 start:               'top top',
-                end:                 () => `+=${window.innerHeight * 1.2}`,
+                end:                 () => `+=${Math.round((window.visualViewport?.height || window.innerHeight) * (IS_MOBILE ? 0.85 : 1.2))}`,
                 pin:                 true,
-                scrub:               0.4,
+                pinType:             'fixed',
+                scrub:               IS_MOBILE ? 0.35 : 0.4,
                 pinSpacing:          true,
+                anticipatePin:       1,
+                fastScrollEnd:       true,
                 invalidateOnRefresh: true,
                 onUpdate(self) {
-                    if (self.progress <= 0.5) {
-                        const p   = self.progress / 0.5
+                    const progress = Math.min(1, Math.max(0, self.progress))
+                    if (progress <= 0.5) {
+                        const p   = progress / 0.5
                         const cvh = window.innerHeight
-                        gsap.set(rows[0], { y:  p * cvh * 1.2, scale: 1, opacity: 1 })
-                        gsap.set(rows[2], { y: -p * cvh * 1.2, scale: 1, opacity: 1 })
-                        gsap.set(rows[1], { scale: 1, opacity: 1 })
+                        gsap.set(rows[0], { y:  p * cvh * 1.2, scale: 1, opacity: 1, x: 0 })
+                        gsap.set(rows[2], { y: -p * cvh * 1.2, scale: 1, opacity: 1, x: 0 })
+                        gsap.set(rows[1], { scale: 1, opacity: 1, x: 0, y: 0 })
                     } else {
                         const cvh = window.innerHeight
-                        gsap.set(rows[0], { y:  cvh * 1.2 })
-                        gsap.set(rows[2], { y: -cvh * 1.2 })
+                        gsap.set(rows[0], { y:  cvh * 1.2, x: 0 })
+                        gsap.set(rows[2], { y: -cvh * 1.2, x: 0 })
 
-                        const p        = (self.progress - 0.5) / 0.5
+                        const p        = (progress - 0.5) / 0.5
                         const minScale = window.innerWidth <= 768 ? 0.22 : 0.1
                         const scale    = 1 - p * (1 - minScale)
-                        const opacity  = 1 - p               // ← fade DESIGNER out
+                        const opacity  = 1 - p
                         rows.forEach(row => gsap.set(row, { scale, opacity }))
                     }
+                },
+                onLeave() {
+                    // Ensure rows are fully cleared once the pin releases so
+                    // they never ghost over the About / Works sections.
+                    rows.forEach(row => gsap.set(row, { opacity: 0, pointerEvents: 'none' }))
+                },
+                onEnterBack() {
+                    rows.forEach(row => gsap.set(row, { pointerEvents: 'auto' }))
                 },
             })
 
             /* ── 3. Clip-path text reveal ────────────────────────────────────────
-               Created AFTER the pin trigger so the pin spacer is already in the
-               DOM and ScrollTrigger positions are accurate.
-               invalidateOnRefresh ensures positions stay correct on resize.    */
+               Desktop: dim base + bright canvas layer reveal on scroll.
+               Mobile: WhoIAmTextCanvas is disabled, so the bright layer is empty —
+               running the same clip would hide the only paragraph and leave a
+               blank block. Show the bio at full opacity instead.              */
             if (dimEl && brightEl) {
-                gsap.set(brightEl, { clipPath: 'inset(0 0 100% 0)' })
-                gsap.set(dimEl,    { clipPath: 'inset(0 0 0% 0)' })
+                if (IS_MOBILE) {
+                    gsap.set(dimEl, {
+                        clipPath:   'none',
+                        visibility: 'visible',
+                        color:      '#F0EDE8',
+                    })
+                    gsap.set(brightEl, {
+                        display:        'none',
+                        visibility:     'hidden',
+                        pointerEvents:  'none',
+                    })
+                } else {
+                    gsap.set(brightEl, { clipPath: 'inset(0 0 100% 0)' })
+                    gsap.set(dimEl,    { clipPath: 'inset(0 0 0% 0)' })
 
-                /* Trigger on the section (not dimEl) so the parallax y-transform
-                   on textWrapEl doesn't offset the start/end positions.         */
-                ScrollTrigger.create({
-                    trigger:             '.wia-about',
-                    start:               'top 60%',
-                    end:                 'bottom 95%',
-                    scrub:               0.5,
-                    invalidateOnRefresh: true,
-                    onUpdate(self) {
-                        const pct = (1 - self.progress) * 100
-                        // bright reveals top-down; dim hides top-down in sync —
-                        // exactly one layer visible at any scroll position
-                        gsap.set(brightEl, { clipPath: `inset(0 0 ${pct}% 0)` })
-                        gsap.set(dimEl,    { clipPath: `inset(${100 - pct}% 0 0 0)` })
-                    },
-                })
+                    /* Trigger on the section (not dimEl) so the parallax y-transform
+                       on textWrapEl doesn't offset the start/end positions.         */
+                    ScrollTrigger.create({
+                        trigger:             '.wia-about',
+                        start:               'top 60%',
+                        end:                 'bottom 95%',
+                        scrub:               0.5,
+                        invalidateOnRefresh: true,
+                        onUpdate(self) {
+                            const pct = (1 - Math.min(1, Math.max(0, self.progress))) * 100
+                            // bright reveals top-down; dim hides top-down in sync —
+                            // exactly one layer visible at any scroll position
+                            gsap.set(brightEl, { clipPath: `inset(0 0 ${pct}% 0)` })
+                            gsap.set(dimEl,    { clipPath: `inset(${100 - pct}% 0 0 0)` })
+                        },
+                    })
+                }
             }
 
             /* ── 4. Parallax — eyebrow only, and only on desktop ────────────────
@@ -185,10 +217,19 @@ export default function WhoIAm() {
 
         }, containerRef)
 
+        let refreshTimer
+        if (IS_MOBILE) {
+            // Mobile address-bar / late layout: refresh once more after paint
+            // so pin start aligns with the sticky hero cover seam.
+            requestAnimationFrame(() => ScrollTrigger.refresh())
+            refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 400)
+        }
+
         return () => {
             ctx.revert()
             window.removeEventListener('resize', sizeBio)
             cancelAnimationFrame(rafId)
+            if (refreshTimer) clearTimeout(refreshTimer)
         }
     }, [])
 

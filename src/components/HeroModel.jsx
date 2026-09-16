@@ -6,7 +6,10 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 
 const lerp = (a, b, t) => a + (b - a) * t
 
-const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768
+const isMobileViewport = () =>
+    typeof window !== 'undefined' &&
+    (window.innerWidth < 768 ||
+        window.matchMedia('(pointer: coarse)').matches)
 
 // ── Scroll-driven camera targets ──────────────────────────────────────────
 // At scroll=0: default view (waist-up model, centered)
@@ -27,6 +30,7 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
         const container = containerRef.current
         if (!container) return
 
+        const IS_MOBILE = isMobileViewport()
         let disposed = false
         let rafId = 0
 
@@ -73,8 +77,10 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
             const scene = new THREE.Scene()
             scene.background = new THREE.Color(0x0a0a0a)
 
-            const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000)
-            camera.position.set(0, 0, 5)
+            // Slightly wider FOV on portrait phones so the bust stays framed
+            // instead of clipping to the left half of the screen.
+            const camera = new THREE.PerspectiveCamera(IS_MOBILE ? 38 : 45, w / h, 0.1, 1000)
+            camera.position.set(0, IS_MOBILE ? 0.15 : 0, IS_MOBILE ? 5.6 : 5)
 
             const renderer = new THREE.WebGLRenderer({
                 antialias: !IS_MOBILE,
@@ -147,9 +153,14 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                     const fovRad = camera.fov * (Math.PI / 180)
                     const fitH = 2 * Math.tan(fovRad / 2) * camera.position.z
 
-                    baseScale = (fitH * 2.0) / maxDim
+                    baseScale = (fitH * (IS_MOBILE ? 0.92 : 2.0)) / maxDim
                     modelGroup.scale.setScalar(baseScale)
-                    modelGroup.position.y -= fitH * 0.5
+                    // On mobile, keep the bust centered in the narrower frame
+                    // instead of the desktop “waist-up, fills height” crop.
+                    modelGroup.position.y -= fitH * (IS_MOBILE ? 0.16 : 0.5)
+                    // Optical center — the mesh is slightly left-weighted in the
+                    // GLB, which reads as empty right-side void on portrait.
+                    if (IS_MOBILE) modelGroup.position.x += 0.22
                     baseY = modelGroup.position.y
 
                     scene.add(modelGroup)
@@ -164,8 +175,10 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                 },
             )
 
-            const target = { x: 0, y: -0.5 }
-            const mouse = { x: 0, y: -0.5 }
+            // Neutral look target on mobile — a non-zero Y made the bust
+            // pitch down and read as clipped / left-heavy on portrait screens.
+            const target = { x: 0, y: IS_MOBILE ? 0 : -0.5 }
+            const mouse  = { x: 0, y: IS_MOBILE ? 0 : -0.5 }
 
             const onMouseMove = (e) => {
                 target.x = (e.clientX / window.innerWidth - 0.5)
@@ -178,13 +191,12 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                 target.y = -(t.clientY / window.innerHeight - 0.5)
             }
 
-            if (IS_MOBILE) {
-                window.addEventListener('touchmove', onTouchMove, { passive: true })
-                pushCleanup(() => window.removeEventListener('touchmove', onTouchMove))
-            } else {
+            if (!IS_MOBILE) {
                 window.addEventListener('mousemove', onMouseMove)
                 pushCleanup(() => window.removeEventListener('mousemove', onMouseMove))
             }
+            // Touch look-at is skipped on mobile — it yaws the bust off-frame
+            // on first finger contact and makes the hero feel broken.
 
             const onResize = () => {
                 const nw = container.clientWidth
@@ -243,12 +255,22 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                     prev.volume = v1
 
                     // ── Scroll-driven camera ──────────────────────────────
-                    camera.position.z = lerp(SCROLL.camZFrom, SCROLL.camZTo, s)
-                    camera.position.y = lerp(SCROLL.camYFrom, SCROLL.camYTo, s)
+                    // Soften the left-shift / yaw on mobile so the bust stays
+                    // readable in portrait instead of sliding off-frame.
+                    const modelXTo = IS_MOBILE ? -0.35 : SCROLL.modelXTo
+                    const rotYOff  = IS_MOBILE ? 0.25 : SCROLL.rotYOffset
+                    const camZFrom = IS_MOBILE ? 5.8 : SCROLL.camZFrom
+                    const camZTo   = IS_MOBILE ? 3.4 : SCROLL.camZTo
+                    const camYFrom = IS_MOBILE ? 0.2 : SCROLL.camYFrom
+                    const camYTo   = IS_MOBILE ? 0.85 : SCROLL.camYTo
+                    const baseX    = IS_MOBILE ? 0.22 : 0
+
+                    camera.position.z = lerp(camZFrom, camZTo, s)
+                    camera.position.y = lerp(camYFrom, camYTo, s)
                     camera.updateProjectionMatrix()
 
                     // ── Model position: drift left on scroll ──────────────
-                    const targetX = lerp(0, SCROLL.modelXTo, s)
+                    const targetX = lerp(baseX, baseX + modelXTo, s)
                     modelGroup.position.x = lerp(modelGroup.position.x, targetX, 0.04)
 
                     // ── Audio reactions ───────────────────────────────────
@@ -256,7 +278,7 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                     modelGroup.scale.setScalar(baseScale * (1 + smooth.bass * 0.04))
 
                     // Rotation: mouse look + scroll left-turn + mid sway
-                    const rotYTarget = mouse.x * (0.5 + smooth.mid * 0.1) + lerp(0, SCROLL.rotYOffset, s)
+                    const rotYTarget = mouse.x * (0.5 + smooth.mid * 0.1) + lerp(0, rotYOff, s)
                     modelGroup.rotation.y = lerp(modelGroup.rotation.y, rotYTarget, 0.06)
                     modelGroup.rotation.x = lerp(modelGroup.rotation.x, mouse.y * 0.3, 0.06)
 

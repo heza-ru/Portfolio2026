@@ -20,7 +20,11 @@ export default function GlobalDigitalEffect() {
     const blocksRef = useRef([])
     const gridMapRef = useRef([])
     const rafRef = useRef(null)
-    const isMobile = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+    const isMobile =
+        typeof window !== 'undefined' &&
+        (window.matchMedia('(hover: none)').matches ||
+            window.matchMedia('(pointer: coarse)').matches ||
+            window.innerWidth < 768)
 
     useEffect(() => {
         if (isMobile) return

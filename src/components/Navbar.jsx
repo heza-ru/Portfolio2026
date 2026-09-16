@@ -157,7 +157,7 @@ export default function Navbar({ isLoaded, isMuted, toggleMute }) {
     useEffect(() => {
         if (!isLoaded) return
         const navH = 52
-        const vh = window.innerHeight
+        const vh = window.visualViewport?.height || window.innerHeight
         const ctrl = animate(navY, vh - navH, {
             duration: 1.6,
             ease: [0.16, 1, 0.3, 1],
@@ -174,7 +174,7 @@ export default function Navbar({ isLoaded, isMuted, toggleMute }) {
 
         const update = () => {
             if (!entryDoneRef.current) return
-            const vh = window.innerHeight
+            const vh = window.visualViewport?.height || window.innerHeight
             const navH = 52
             const sentinelTop = sentinel.getBoundingClientRect().top
 
@@ -187,9 +187,13 @@ export default function Navbar({ isLoaded, isMuted, toggleMute }) {
 
         window.addEventListener('scroll', update, { passive: true })
         window.addEventListener('resize', update, { passive: true })
+        window.visualViewport?.addEventListener('resize', update, { passive: true })
+        window.visualViewport?.addEventListener('scroll', update, { passive: true })
         return () => {
             window.removeEventListener('scroll', update)
             window.removeEventListener('resize', update)
+            window.visualViewport?.removeEventListener('resize', update)
+            window.visualViewport?.removeEventListener('scroll', update)
         }
     }, [navY])
 
@@ -299,7 +303,7 @@ export default function Navbar({ isLoaded, isMuted, toggleMute }) {
                 style={{ y: navY }}
                 className="fixed top-0 z-[60] w-full mix-blend-difference text-black"
             >
-                <div className="flex items-center justify-between px-6 md:px-12 py-4 bg-white w-full">
+                <div className="flex items-center justify-between px-5 md:px-12 py-3.5 md:py-4 bg-white w-full safe-nav-pad">
 
                     {/* ── LEFT slot: links → name on scroll ── */}
                     <div className="flex items-center" style={{ minWidth: 0 }}>
