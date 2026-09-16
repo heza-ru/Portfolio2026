@@ -1,37 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Plays muted immediately (browsers allow muted autoplay).
- * On the very first user interaction anywhere on the page the AudioContext
- * is created, resumed, and the audio unmutes automatically — no manual click
- * on the volume button required.
+ * Defers the ambience download until the first user gesture.
+ * Creating `new Audio(src)` previously kicked off a multi‑MB network fetch
+ * on every page load even while muted — catastrophic on mobile.
  *
- * toggleMute lets the user mute/unmute after that point.
- * dataRef is updated every animation frame with no re-renders.
+ * After first interaction: AudioContext + analyser are wired, then unmuted.
+ * dataRef is updated every animation frame with no React re-renders.
  */
 export function useAudioAnalyser(audioSrc) {
-    const dataRef      = useRef({ bass: 0, mid: 0, treble: 0, volume: 0 })
-    const audioRef     = useRef(null)
-    const ctxRef       = useRef(null)
-    const analyserRef  = useRef(null)
-    const dataArrayRef = useRef(null)
-    const rafRef       = useRef(null)
-    const setupDone    = useRef(false)
+    const dataRef        = useRef({ bass: 0, mid: 0, treble: 0, volume: 0 })
+    const audioRef       = useRef(null)
+    const ctxRef         = useRef(null)
+    const analyserRef    = useRef(null)
+    const dataArrayRef   = useRef(null)
+    const rafRef         = useRef(null)
+    const setupDone      = useRef(false)
+    const setupPromise   = useRef(null)
+    const ensureSetupRef = useRef(null)
 
     const [isMuted, setIsMuted] = useState(true)
 
     useEffect(() => {
-        const audio = new Audio(audioSrc)
-        audio.loop   = true
-        audio.volume = 0.45
-        audio.muted  = true          // muted so autoplay is never blocked
-        audioRef.current = audio
-
-        audio.play().catch(() => {
-            // Fully blocked (rare) — retry on first interaction below
-        })
-
-        // Frequency tick — runs always; data is only non-zero once analyser exists
         const tick = () => {
             rafRef.current = requestAnimationFrame(tick)
             if (!analyserRef.current || !dataArrayRef.current) return
@@ -51,26 +41,44 @@ export function useAudioAnalyser(audioSrc) {
         }
         tick()
 
-        // ── Auto-unmute on first user gesture anywhere ──────────────────
-        const autoUnmute = async () => {
+        const ensureSetup = async () => {
             if (setupDone.current) return
-            setupDone.current = true
+            if (setupPromise.current) return setupPromise.current
 
-            const ctx = new (window.AudioContext || window.webkitAudioContext)()
-            ctxRef.current = ctx
+            setupPromise.current = (async () => {
+                const audio = new Audio(audioSrc)
+                audio.loop   = true
+                audio.volume = 0.45
+                audio.muted  = true
+                audioRef.current = audio
 
-            const source   = ctx.createMediaElementSource(audio)
-            const analyser = ctx.createAnalyser()
-            analyser.fftSize = 256
-            analyser.smoothingTimeConstant = 0.78
-            source.connect(analyser)
-            analyser.connect(ctx.destination)
-            analyserRef.current  = analyser
-            dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount)
+                const ctx = new (window.AudioContext || window.webkitAudioContext)()
+                ctxRef.current = ctx
 
-            if (ctx.state === 'suspended') await ctx.resume()
-            if (audio.paused) await audio.play().catch(() => {})
+                const source   = ctx.createMediaElementSource(audio)
+                const analyser = ctx.createAnalyser()
+                analyser.fftSize = 256
+                analyser.smoothingTimeConstant = 0.78
+                source.connect(analyser)
+                analyser.connect(ctx.destination)
+                analyserRef.current  = analyser
+                dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount)
 
+                if (ctx.state === 'suspended') await ctx.resume()
+                await audio.play().catch(() => {})
+
+                setupDone.current = true
+            })()
+
+            return setupPromise.current
+        }
+
+        ensureSetupRef.current = ensureSetup
+
+        const autoUnmute = async () => {
+            await ensureSetup()
+            const audio = audioRef.current
+            if (!audio) return
             audio.muted = false
             setIsMuted(false)
         }
@@ -80,13 +88,15 @@ export function useAudioAnalyser(audioSrc) {
 
         return () => {
             cancelAnimationFrame(rafRef.current)
-            audio.pause()
+            audioRef.current?.pause()
             ctxRef.current?.close()
             EVENTS.forEach(e => window.removeEventListener(e, autoUnmute))
+            ensureSetupRef.current = null
         }
     }, [audioSrc])
 
     const toggleMute = async () => {
+        if (ensureSetupRef.current) await ensureSetupRef.current()
         const audio = audioRef.current
         if (!audio) return
 

@@ -113,7 +113,8 @@ export default function Hero({ isLoaded, audioDataRef }) {
                         initial={{ opacity: 0 }}
                         animate={isLoaded ? { opacity: 1 } : {}}
                         transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-                        className="absolute inset-0 z-[1]"
+                        className="absolute inset-0 z-[1] pointer-events-none"
+                        style={{ touchAction: 'pan-y' }}
                     >
                         <HeroModel audioDataRef={audioDataRef} scrollProgress={scrollYProgress} />
                     </motion.div>

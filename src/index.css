@@ -105,6 +105,9 @@
   @media (max-width: 767px) {
     html, body {
       overscroll-behavior: none;
+      /* clip (not hidden) — overflow-x:hidden on both html+body is a
+         known iOS Safari bug that can freeze vertical touch scrolling. */
+      overflow-x: clip;
     }
 
     .safe-nav-pad {
@@ -329,8 +332,8 @@
     width: 100%;
   }
 
-  .pl-nice-text { font-size: clamp(1.6rem, 11vw, 7rem); }
-  .pl-im-text   { font-size: clamp(2.4rem, 18vw, 12rem); }
+  .pl-nice-text { font-size: clamp(2.4rem, 12vw, 7rem); }
+  .pl-im-text   { font-size: clamp(3.6rem, 22vw, 12rem); }
 
   /* Horizontal cut line — sweeps across then sits at the split seam */
   .pl-cut-line {
@@ -666,10 +669,22 @@
       touch-action: manipulation;
     }
 
-    /* Kill horizontal bleed from 100vw / absolute children */
-    html, body, #root, main {
+    /* Kill horizontal bleed from 100vw / absolute children.
+       Use clip — overflow-x:hidden on the scroll root freezes iOS touch scroll. */
+    html, body {
       max-width: 100%;
-      overflow-x: hidden;
+      overflow-x: clip;
+    }
+
+    #root, main {
+      max-width: 100%;
+      overflow-x: clip;
+    }
+
+    /* Hero WebGL layer must never capture vertical pans */
+    .hero-sticky canvas {
+      touch-action: pan-y;
+      pointer-events: none;
     }
 
     /* Eliminate any stray default margins that could create pixel gaps
@@ -721,8 +736,11 @@
     }
 
     .wia-role-row {
-      font-size: clamp(2rem, 11.5vw, 4.5rem);
-      padding: 0 3vw;
+      /* Near full-bleed title scale so ENGINEER / DESIGNER / CONSULTANT
+         read as loud as the hero names on a phone. */
+      font-size: clamp(3.2rem, 16vw, 6.5rem);
+      padding: 0 2vw;
+      letter-spacing: -0.02em;
     }
 
     /* Bio paragraph: no clip-reveal on mobile (bright layer is empty).

@@ -77,10 +77,9 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
             const scene = new THREE.Scene()
             scene.background = new THREE.Color(0x0a0a0a)
 
-            // Slightly wider FOV on portrait phones so the bust stays framed
-            // instead of clipping to the left half of the screen.
-            const camera = new THREE.PerspectiveCamera(IS_MOBILE ? 38 : 45, w / h, 0.1, 1000)
-            camera.position.set(0, IS_MOBILE ? 0.15 : 0, IS_MOBILE ? 5.6 : 5)
+            // Slightly wider FOV on portrait phones so the bust stays framed.
+            const camera = new THREE.PerspectiveCamera(IS_MOBILE ? 42 : 45, w / h, 0.1, 1000)
+            camera.position.set(0, IS_MOBILE ? 0.1 : 0, IS_MOBILE ? 5.2 : 5)
 
             const renderer = new THREE.WebGLRenderer({
                 antialias: !IS_MOBILE,
@@ -96,6 +95,8 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
             renderer.toneMappingExposure = IS_MOBILE ? 1.1 : 0.85
             // block display prevents the 4px inline-element gap below the canvas
             renderer.domElement.style.display = 'block'
+            renderer.domElement.style.pointerEvents = 'none'
+            renderer.domElement.style.touchAction = 'pan-y'
             // Keep canvas invisible until the model is in the scene — prevents the
             // "black canvas" flash that occurs between canvas-append and first model render
             container.style.opacity = '0'
@@ -153,14 +154,13 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                     const fovRad = camera.fov * (Math.PI / 180)
                     const fitH = 2 * Math.tan(fovRad / 2) * camera.position.z
 
-                    baseScale = (fitH * (IS_MOBILE ? 0.92 : 2.0)) / maxDim
+                    baseScale = (fitH * (IS_MOBILE ? 1.35 : 2.0)) / maxDim
                     modelGroup.scale.setScalar(baseScale)
-                    // On mobile, keep the bust centered in the narrower frame
+                    // On mobile, keep the bust optically centered in portrait
                     // instead of the desktop “waist-up, fills height” crop.
-                    modelGroup.position.y -= fitH * (IS_MOBILE ? 0.16 : 0.5)
-                    // Optical center — the mesh is slightly left-weighted in the
-                    // GLB, which reads as empty right-side void on portrait.
-                    if (IS_MOBILE) modelGroup.position.x += 0.22
+                    modelGroup.position.y -= fitH * (IS_MOBILE ? 0.12 : 0.5)
+                    // No X bias on mobile — prior +0.22 optical nudge read as
+                    // “small and shoved to the right” on narrow screens.
                     baseY = modelGroup.position.y
 
                     scene.add(modelGroup)
@@ -257,13 +257,13 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                     // ── Scroll-driven camera ──────────────────────────────
                     // Soften the left-shift / yaw on mobile so the bust stays
                     // readable in portrait instead of sliding off-frame.
-                    const modelXTo = IS_MOBILE ? -0.35 : SCROLL.modelXTo
-                    const rotYOff  = IS_MOBILE ? 0.25 : SCROLL.rotYOffset
-                    const camZFrom = IS_MOBILE ? 5.8 : SCROLL.camZFrom
-                    const camZTo   = IS_MOBILE ? 3.4 : SCROLL.camZTo
-                    const camYFrom = IS_MOBILE ? 0.2 : SCROLL.camYFrom
-                    const camYTo   = IS_MOBILE ? 0.85 : SCROLL.camYTo
-                    const baseX    = IS_MOBILE ? 0.22 : 0
+                    const modelXTo = IS_MOBILE ? -0.15 : SCROLL.modelXTo
+                    const rotYOff  = IS_MOBILE ? 0.12 : SCROLL.rotYOffset
+                    const camZFrom = IS_MOBILE ? 5.2 : SCROLL.camZFrom
+                    const camZTo   = IS_MOBILE ? 3.6 : SCROLL.camZTo
+                    const camYFrom = IS_MOBILE ? 0.1 : SCROLL.camYFrom
+                    const camYTo   = IS_MOBILE ? 0.7 : SCROLL.camYTo
+                    const baseX    = 0
 
                     camera.position.z = lerp(camZFrom, camZTo, s)
                     camera.position.y = lerp(camYFrom, camYTo, s)
@@ -332,7 +332,13 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
         <div
             ref={containerRef}
             className={`w-full h-full ${className}`}
-            style={{ overflow: 'hidden' }}
+            style={{
+                overflow: 'hidden',
+                // Let vertical drags scroll the page — WebGL canvases otherwise
+                // eat touchmove and freeze mobile scrolling over the hero.
+                pointerEvents: 'none',
+                touchAction: 'pan-y',
+            }}
         />
     )
 }

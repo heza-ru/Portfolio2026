@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { CustomEase } from 'gsap/CustomEase'
 
@@ -7,7 +7,7 @@ import { CustomEase } from 'gsap/CustomEase'
    Temporarily expands the element to max-content so wrapping never interferes.
    ───────────────────────────────────────────────────────────────────────────── */
 function fitToWidth(el, maxWidth) {
-    if (!el) return 16
+    if (!el || !(maxWidth > 0)) return null
     const prevWidth = el.style.width
     el.style.width = 'max-content'
 
@@ -20,13 +20,23 @@ function fitToWidth(el, maxWidth) {
     }
 
     el.style.width = prevWidth
-    el.style.fontSize = `${Math.floor(lo)}px`
-    return Math.floor(lo)
+    const size = Math.floor(lo)
+    el.style.fontSize = `${size}px`
+    return size
+}
+
+/* In-app WebViews often report visualViewport.width as 0 on first paint.
+   Never feed that into fitToWidth or type collapses to ~10px. */
+function safeViewportWidth() {
+    const iw = window.innerWidth || document.documentElement.clientWidth || 375
+    const vv = window.visualViewport?.width
+    const w = (typeof vv === 'number' && vv > 40) ? Math.min(iw, vv) : iw
+    return Math.max(280, w)
 }
 
 /* Fonts often hang forever in in-app WebViews (Luma, Instagram, etc.) when
    Google Fonts / Fontshare are blocked or deferred. Never wait unbounded. */
-function fontsReadyOrTimeout(ms = 700) {
+function fontsReadyOrTimeout(ms = 500) {
     if (!document.fonts?.ready) return Promise.resolve()
     return Promise.race([
         document.fonts.ready.catch(() => {}),
@@ -34,9 +44,6 @@ function fontsReadyOrTimeout(ms = 700) {
     ])
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Shared markup used in BOTH overlay layers (primary + mirror).
-   ───────────────────────────────────────────────────────────────────────────── */
 function Layers() {
     return (
         <>
@@ -51,26 +58,54 @@ function Layers() {
 }
 
 export default function Preloader({ onComplete }) {
+    /* Keep latest callback without re-running the intro when parent re-renders
+       (e.g. mute state flip on first touch — that was restarting the timeline
+       mid-flight and dumping users mid-page in WebViews). */
+    const onCompleteRef = useRef(onComplete)
+    useEffect(() => {
+        onCompleteRef.current = onComplete
+    }, [onComplete])
+
     useEffect(() => {
         gsap.registerPlugin(CustomEase)
         CustomEase.create('hop', '.8, 0, .3, 1')
+
+        try {
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+        } catch { /* ignore */ }
+        window.scrollTo(0, 0)
+
         document.body.style.overflow = 'hidden'
         document.documentElement.classList.add('pl-active')
 
         let tl
         let cancelled = false
         let completed = false
+        let hiddenDriver = null
+        let onVis = null
 
         const finish = () => {
             if (completed || cancelled) return
             completed = true
+            if (hiddenDriver) {
+                clearInterval(hiddenDriver)
+                hiddenDriver = null
+            }
+            if (onVis) {
+                document.removeEventListener('visibilitychange', onVis)
+                onVis = null
+            }
+            window.scrollTo(0, 0)
             document.body.style.overflow = ''
             document.documentElement.classList.remove('pl-active')
-            onComplete?.()
+            // One more frame after unlock so sticky / ST measure from y=0
+            requestAnimationFrame(() => {
+                window.scrollTo(0, 0)
+                onCompleteRef.current?.()
+            })
         }
 
-        /* Hard failsafe — never leave users stuck on a blank white screen in
-           WebViews that pause RAF / hide the document on first paint. */
+        /* Hard failsafe — never leave users stuck on a blank white screen. */
         const failsafe = setTimeout(() => {
             if (cancelled || completed) return
             tl?.kill()
@@ -79,66 +114,76 @@ export default function Preloader({ onComplete }) {
                 pointerEvents: 'none',
             })
             finish()
-        }, 5200)
+        }, 6500)
 
         ;(async () => {
-            // Wake GSAP if the WebView reported document.hidden on load
-            // (common in Luma / Instagram / LinkedIn in-app browsers).
             try { gsap.ticker.wake() } catch { /* older GSAP — ignore */ }
 
-            await fontsReadyOrTimeout(700)
-            if (cancelled) return
-
-            // One more wake after the await — visibility may have flipped.
-            try { gsap.ticker.wake() } catch { /* ignore */ }
-
-            // Show fallback-sized type immediately so WebViews never sit on a
-            // blank white sheet while we measure / schedule the timeline.
+            // Make CSS-sized type visible immediately — never wait on measure.
             gsap.set('.pl-text', { visibility: 'visible', opacity: 1 })
 
-            const W = Math.min(window.innerWidth, window.visualViewport?.width || window.innerWidth) * 0.97
+            await fontsReadyOrTimeout(500)
+            if (cancelled) return
 
+            try { gsap.ticker.wake() } catch { /* ignore */ }
+
+            const W = safeViewportWidth() * 0.94
             const niceSize = fitToWidth(document.querySelector('.pl-preloader .pl-nice-text'), W)
             const imSize   = fitToWidth(document.querySelector('.pl-preloader .pl-im-text'),   W)
 
-            document.querySelectorAll('.pl-nice-text').forEach(el => { el.style.fontSize = `${niceSize}px` })
-            document.querySelectorAll('.pl-im-text')  .forEach(el => { el.style.fontSize = `${imSize}px`   })
+            // Only apply measured sizes when they beat the CSS clamp floor —
+            // protects WebViews where measurement returns nonsense.
+            if (niceSize && niceSize >= 28) {
+                document.querySelectorAll('.pl-nice-text').forEach(el => {
+                    el.style.fontSize = `${niceSize}px`
+                })
+            }
+            if (imSize && imSize >= 40) {
+                document.querySelectorAll('.pl-im-text').forEach(el => {
+                    el.style.fontSize = `${imSize}px`
+                })
+            }
 
             if (cancelled) return
 
             gsap.set('.pl-preloader .pl-nice-text', { y: '140%' })
             gsap.set('.pl-preloader .pl-im-text',   { y: '140%' })
-
             gsap.set('.pl-split-overlay .pl-nice-text', { y: '0%' })
             gsap.set('.pl-split-overlay .pl-im-text',   { y: '20%' })
 
             tl = gsap.timeline({
                 defaults: { ease: 'hop' },
-                // Keep the timeline advancing even if the page briefly reports hidden
-                // during WebView bootstrap (otherwise the intro never plays).
                 onComplete: () => {
                     clearTimeout(failsafe)
                     finish()
                 },
             })
 
-            // If the tab is still hidden when we build the timeline, force a
-            // short delayed restart once it becomes visible so users see it.
-            const maybeRestartOnVisible = () => {
-                if (cancelled || completed) return
-                if (!document.hidden) return
-                const onVis = () => {
-                    if (document.hidden || cancelled || completed) return
-                    document.removeEventListener('visibilitychange', onVis)
+            /* In-app WebViews often start with document.hidden=true and freeze
+               rAF — GSAP never advances. Drive the timeline from setInterval
+               while hidden so the intro still plays. */
+            let lastTick = performance.now()
+            hiddenDriver = setInterval(() => {
+                if (cancelled || completed || !tl) return
+                if (!document.hidden) {
+                    lastTick = performance.now()
                     try { gsap.ticker.wake() } catch { /* ignore */ }
-                    // If we haven't gotten past the first beat, restart from 0
-                    if (tl && tl.progress() < 0.05) {
-                        tl.restart(true, false)
-                    }
+                    return
                 }
-                document.addEventListener('visibilitychange', onVis)
+                const now = performance.now()
+                const dt = Math.min(0.05, (now - lastTick) / 1000)
+                lastTick = now
+                try {
+                    tl.time(tl.time() + dt)
+                } catch { /* ignore */ }
+            }, 33)
+
+            onVis = () => {
+                if (document.hidden || cancelled || completed) return
+                try { gsap.ticker.wake() } catch { /* ignore */ }
+                if (tl && tl.progress() < 0.05) tl.restart(true, false)
             }
-            maybeRestartOnVisible()
+            document.addEventListener('visibilitychange', onVis)
 
             tl
                 .to('.pl-preloader .pl-nice-text', { y: '0%', duration: 1.3 }, 0.15)
@@ -161,16 +206,18 @@ export default function Preloader({ onComplete }) {
         return () => {
             cancelled = true
             clearTimeout(failsafe)
+            if (hiddenDriver) clearInterval(hiddenDriver)
+            if (onVis) document.removeEventListener('visibilitychange', onVis)
             tl?.kill()
             document.body.style.overflow = ''
             document.documentElement.classList.remove('pl-active')
         }
-    }, [onComplete])
+    }, [])
 
     return (
         <>
-            <div className="pl-preloader" aria-hidden="true">  <Layers /> </div>
-            <div className="pl-split-overlay" aria-hidden="true"><Layers /> </div>
+            <div className="pl-preloader" aria-hidden="true"><Layers /></div>
+            <div className="pl-split-overlay" aria-hidden="true"><Layers /></div>
             <div className="pl-cut-line" aria-hidden="true" />
         </>
     )

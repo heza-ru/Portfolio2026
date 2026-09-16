@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { ReactLenis, useLenis } from '@studio-freight/react-lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -30,7 +30,7 @@ import Hero from './components/Hero'
 import { useAudioAnalyser } from './hooks/useAudioAnalyser'
 import WhoIAm from './components/WhoIAm'
 import Works from './components/Works'
-import Footer from './components/Footer'
+import LazyFooter from './components/LazyFooter'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import Preloader from './components/Preloader'
 import IdleOverlay from './components/IdleOverlay'
@@ -51,13 +51,26 @@ function App() {
     const [loaded, setLoaded] = useState(false)
     const { dataRef: audioDataRef, isMuted, toggleMute } = useAudioAnalyser('/ambience.mp3')
 
-    /* After the intro, remeasure pins — mobile layout (dvh) often settles a
-       beat after first paint, which otherwise leaves the WhoIAm cover pin
-       glued over Works. */
+    /* Stable — inline arrow recreated every mute-state render and used to
+       restart the Preloader effect (broke WebView intro + left users mid-page). */
+    const handlePreloaderComplete = useCallback(() => {
+        window.scrollTo(0, 0)
+        setLoaded(true)
+    }, [])
+
+    /* After the intro, pin to top then remeasure — mobile dvh + ST pins
+       otherwise leave the roles section stuck at the top of the viewport. */
     useEffect(() => {
         if (!loaded) return
-        const soft = requestAnimationFrame(() => ScrollTrigger.refresh())
-        const hard = setTimeout(() => ScrollTrigger.refresh(), 220)
+        window.scrollTo(0, 0)
+        const soft = requestAnimationFrame(() => {
+            window.scrollTo(0, 0)
+            ScrollTrigger.refresh()
+        })
+        const hard = setTimeout(() => {
+            window.scrollTo(0, 0)
+            ScrollTrigger.refresh()
+        }, 220)
         return () => {
             cancelAnimationFrame(soft)
             clearTimeout(hard)
@@ -77,9 +90,9 @@ function App() {
             <main id="main-content" className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
                 <Hero isLoaded={loaded} audioDataRef={audioDataRef} />
                 <Navbar isLoaded={loaded} isMuted={isMuted} toggleMute={toggleMute} />
-                <WhoIAm />
+                <WhoIAm isReady={loaded} />
                 <Works />
-                <Footer />
+                <LazyFooter />
             </main>
         </div>
     )
@@ -94,7 +107,7 @@ function App() {
             </a>
 
             {/* Preloader sits outside Lenis so scroll is locked during the animation */}
-            {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
+            {!loaded && <Preloader onComplete={handlePreloaderComplete} />}
 
             {/*
              * Mobile: native scroll only. Wrapping in ReactLenis (even with

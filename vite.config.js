@@ -17,15 +17,25 @@ function logArticleHtmlInputs() {
     )
 }
 
-/** Copy OG preview image to public so /og-image.png is a stable absolute URL for meta tags. */
-function copyOgImageFromSnapshot() {
+/** Copy OG preview image to public so /og-image.png is a stable absolute URL for meta tags.
+ *  Re-encodes to 1200×630 PNG so social crawlers get a lean, correctly sized asset. */
+async function copyOgImageFromSnapshot() {
     const src = resolve(root, 'src/assets/snapshot.png')
     const dest = resolve(root, 'public/og-image.png')
     if (!existsSync(src)) {
         console.warn('[vite] src/assets/snapshot.png not found — og:image will 404 until you add it')
         return
     }
-    copyFileSync(src, dest)
+    try {
+        const sharp = (await import('sharp')).default
+        await sharp(src)
+            .resize(1200, 630, { fit: 'cover', position: 'centre' })
+            .png({ compressionLevel: 9, quality: 80, effort: 10 })
+            .toFile(dest)
+    } catch (err) {
+        console.warn('[vite] sharp OG optimize failed — copying raw snapshot', err?.message || err)
+        copyFileSync(src, dest)
+    }
 }
 
 /** Copy `logs/articles/{id}/images/` into dist so `/logs/articles/...` URLs work in production. */
@@ -93,10 +103,10 @@ export default defineConfig(({ mode }) => {
             {
                 name: 'copy-og-image',
                 buildStart() {
-                    copyOgImageFromSnapshot()
+                    return copyOgImageFromSnapshot()
                 },
                 configureServer() {
-                    copyOgImageFromSnapshot()
+                    void copyOgImageFromSnapshot()
                 },
             },
             {
@@ -127,6 +137,7 @@ export default defineConfig(({ mode }) => {
                         'vendor-gsap': ['gsap'],
                         'vendor-motion': ['framer-motion'],
                         'vendor-react': ['react', 'react-dom'],
+                        'vendor-matter': ['matter-js'],
                     },
                 },
             },

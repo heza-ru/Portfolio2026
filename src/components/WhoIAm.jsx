@@ -22,11 +22,18 @@ function fitToWidth(el, targetWidth, { min = 8, max = 400 } = {}) {
     return lo
 }
 
-export default function WhoIAm() {
+export default function WhoIAm({ isReady = true }) {
     const containerRef = useRef(null)
     const wrapRef      = useRef(null)
 
     useEffect(() => {
+        /* Hold ScrollTrigger until the preloader unlocks scroll at y=0.
+           Creating pins mid-intro (while WebViews still report odd scroll
+           offsets) left users landed on ENGINEER/DESIGNER/CONSULTANT. */
+        if (!isReady) return
+
+        window.scrollTo(0, 0)
+
         const dimEl    = document.querySelector('.wia-text-dim')
         const brightEl = document.querySelector('.wia-text-bright')
 
@@ -60,7 +67,6 @@ export default function WhoIAm() {
 
         const ctx = gsap.context(() => {
 
-            const vh    = window.innerHeight
             const rolesEl = document.querySelector('.wia-roles')
             const rows    = document.querySelectorAll('.wia-role-row')
 
@@ -93,7 +99,7 @@ export default function WhoIAm() {
                 start:               'top top',
                 end:                 () => `+=${Math.round((window.visualViewport?.height || window.innerHeight) * (IS_MOBILE ? 0.85 : 1.2))}`,
                 pin:                 true,
-                pinType:             'fixed',
+                pinType:             IS_MOBILE ? 'transform' : 'fixed',
                 scrub:               IS_MOBILE ? 0.35 : 0.4,
                 pinSpacing:          true,
                 anticipatePin:       1,
@@ -221,8 +227,14 @@ export default function WhoIAm() {
         if (IS_MOBILE) {
             // Mobile address-bar / late layout: refresh once more after paint
             // so pin start aligns with the sticky hero cover seam.
-            requestAnimationFrame(() => ScrollTrigger.refresh())
-            refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 400)
+            requestAnimationFrame(() => {
+                window.scrollTo(0, 0)
+                ScrollTrigger.refresh()
+            })
+            refreshTimer = setTimeout(() => {
+                window.scrollTo(0, 0)
+                ScrollTrigger.refresh()
+            }, 400)
         }
 
         return () => {
@@ -231,7 +243,7 @@ export default function WhoIAm() {
             cancelAnimationFrame(rafId)
             if (refreshTimer) clearTimeout(refreshTimer)
         }
-    }, [])
+    }, [isReady])
 
     return (
         <div ref={containerRef} id="about" className="wia-container" style={{ backgroundColor: '#0A0A0A' }}>
