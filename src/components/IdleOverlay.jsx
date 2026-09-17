@@ -3,7 +3,11 @@ import gsap from 'gsap'
 
 const WORDS     = ['DESIGNER', 'DISRUPTOR', 'REBEL', 'ENGINEER', 'CONSULTANT']
 const IDLE_MS   = 5000
-const IN_EVENTS = ['mousemove', 'touchstart', 'keydown', 'click', 'wheel']
+const IN_EVENTS = ['mousemove', 'touchstart', 'keydown', 'click', 'wheel', 'scroll', 'pointerdown']
+
+const isCoarsePointer = () =>
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768)
 
 export default function IdleOverlay({ isReady = false }) {
     const overlayRef  = useRef(null)
@@ -24,6 +28,7 @@ export default function IdleOverlay({ isReady = false }) {
     useEffect(() => {
         const overlay       = overlayRef.current
         const originalTitle = document.title
+        const mobile        = isCoarsePointer()
 
         /* ── Build a dense word grid ─────────────────────────────────────────
            Row-based layout:
@@ -31,6 +36,7 @@ export default function IdleOverlay({ isReady = false }) {
            • Each row is overflow:hidden flex, packed with enough words to
              bleed past the right edge — guarantees zero horizontal gap.
            • Row count fills full viewport height — guarantees zero vertical gap.
+           Mobile: slightly larger type + fewer rows so the overlay stays light.
         ─────────────────────────────────────────────────────────────────────── */
         function buildWords() {
             overlay.innerHTML = ''
@@ -39,17 +45,19 @@ export default function IdleOverlay({ isReady = false }) {
             const vh = window.innerHeight
 
             /* Font size: large so the pattern reads clearly */
-            const fs = Math.min(42, Math.max(24, vw * 2.8 / 100))
+            const fs = mobile
+                ? Math.min(36, Math.max(22, vw * 3.2 / 100))
+                : Math.min(42, Math.max(24, vw * 2.8 / 100))
 
             /* Rows: enough to fill height — container uses flex so they stretch */
             const approxRowH   = fs * 1.35
-            const numRows      = Math.ceil(vh / approxRowH) + 1
+            const numRows      = Math.ceil(vh / approxRowH) + (mobile ? 0 : 1)
 
             /* Words per row: overshoot width by 2 words; overflow:hidden clips the last one */
             const avgCharW     = fs * 0.72    // Clash Display bold uppercase ~0.72em/char
             const avgWordW     = avgCharW * 9 // average ~9 chars across the word pool
             const gap          = fs * 0.4     // gap between words
-            const wordsPerRow  = Math.ceil(vw / (avgWordW + gap)) + 3
+            const wordsPerRow  = Math.ceil(vw / (avgWordW + gap)) + (mobile ? 2 : 3)
 
             const frag = document.createDocumentFragment()
 
@@ -105,7 +113,7 @@ export default function IdleOverlay({ isReady = false }) {
                 opacity:  1,
                 duration: 0.05,
                 ease:     'power2.inOut',
-                stagger:  { amount: 0.55, from: 'random' },
+                stagger:  { amount: mobile ? 0.4 : 0.55, from: 'random' },
             })
         }
 
@@ -117,7 +125,7 @@ export default function IdleOverlay({ isReady = false }) {
                 opacity:  0,
                 duration: 0.05,
                 ease:     'power2.inOut',
-                stagger:  { amount: 0.5, from: 'random' },
+                stagger:  { amount: mobile ? 0.35 : 0.5, from: 'random' },
                 onComplete: () => { overlay.style.display = 'none' },
             })
         }

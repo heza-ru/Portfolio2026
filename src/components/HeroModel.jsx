@@ -11,16 +11,16 @@ const isMobileViewport = () =>
     (window.innerWidth < 768 ||
         window.matchMedia('(pointer: coarse)').matches)
 
-// ── Scroll-driven camera targets ──────────────────────────────────────────
+// ── Scroll-driven camera targets (desktop) ────────────────────────────────
 // At scroll=0: default view (waist-up model, centered)
 // At scroll=1: zoomed in on face, model pushed left, slight left-turn
 const SCROLL = {
     camZFrom:    5,
-    camZTo:      2.4,   // zoom in
+    camZTo:      2.4,
     camYFrom:    0,
-    camYTo:      1.4,   // pan up to face
-    modelXTo:   -1.6,   // shift model left
-    rotYOffset:  1,  // model turns slightly right
+    camYTo:      1.4,
+    modelXTo:   -1.6,
+    rotYOffset:  1,
 }
 
 export default function HeroModel({ className = '', audioDataRef = null, scrollProgress = null }) {
@@ -33,25 +33,16 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
         const IS_MOBILE = isMobileViewport()
         let disposed = false
         let rafId = 0
+        let running = false
+        let inView = true
 
         const cleanupFns = []
-
-        const pushCleanup = (fn) => {
-            cleanupFns.push(fn)
-        }
+        const pushCleanup = (fn) => { cleanupFns.push(fn) }
 
         const run = async () => {
-            // Start loading immediately — the GLB is already preloaded via
-            // <link rel="preload">, so it is in the browser cache.
-            // Deferring with requestIdleCallback caused a black-canvas flash on
-            // mobile because the canvas revealed (preloader done) before the
-            // model ever started loading.
             await MeshoptDecoder.ready
             if (disposed) return
 
-            // Wait for the container to have real pixel dimensions.
-            // On some mobile browsers the first paint happens before layout
-            // is flushed, leaving clientWidth / clientHeight at 0.
             let w = container.clientWidth
             let h = container.clientHeight
 
@@ -77,7 +68,6 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
             const scene = new THREE.Scene()
             scene.background = new THREE.Color(0x0a0a0a)
 
-            // Slightly wider FOV on portrait phones so the bust stays framed.
             const camera = new THREE.PerspectiveCamera(IS_MOBILE ? 42 : 45, w / h, 0.1, 1000)
             camera.position.set(0, IS_MOBILE ? 0.1 : 0, IS_MOBILE ? 5.2 : 5)
 
@@ -93,12 +83,9 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
             renderer.outputColorSpace = THREE.SRGBColorSpace
             renderer.toneMapping = THREE.ACESFilmicToneMapping
             renderer.toneMappingExposure = IS_MOBILE ? 1.1 : 0.85
-            // block display prevents the 4px inline-element gap below the canvas
             renderer.domElement.style.display = 'block'
             renderer.domElement.style.pointerEvents = 'none'
             renderer.domElement.style.touchAction = 'pan-y'
-            // Keep canvas invisible until the model is in the scene — prevents the
-            // "black canvas" flash that occurs between canvas-append and first model render
             container.style.opacity = '0'
             container.style.transition = 'opacity 0.5s ease'
             container.appendChild(renderer.domElement)
@@ -156,27 +143,21 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
 
                     baseScale = (fitH * (IS_MOBILE ? 1.35 : 2.0)) / maxDim
                     modelGroup.scale.setScalar(baseScale)
-                    // On mobile, keep the bust optically centered in portrait
-                    // instead of the desktop “waist-up, fills height” crop.
                     modelGroup.position.y -= fitH * (IS_MOBILE ? 0.12 : 0.5)
-                    // No X bias on mobile — prior +0.22 optical nudge read as
-                    // “small and shoved to the right” on narrow screens.
                     baseY = modelGroup.position.y
 
                     scene.add(modelGroup)
-                    // Reveal the canvas now that the model is ready
                     container.style.opacity = '1'
+                    // Paint one frame immediately even if the loop is paused
+                    renderer.render(scene, camera)
                 },
                 undefined,
                 (err) => {
                     console.error('GLB load error', err)
-                    // Still reveal on error so the background shows rather than staying invisible
                     container.style.opacity = '1'
                 },
             )
 
-            // Neutral look target on mobile — a non-zero Y made the bust
-            // pitch down and read as clipped / left-heavy on portrait screens.
             const target = { x: 0, y: IS_MOBILE ? 0 : -0.5 }
             const mouse  = { x: 0, y: IS_MOBILE ? 0 : -0.5 }
 
@@ -184,52 +165,70 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                 target.x = (e.clientX / window.innerWidth - 0.5)
                 target.y = -(e.clientY / window.innerHeight - 0.5)
             }
-            const onTouchMove = (e) => {
-                const t = e.touches[0]
-                if (!t) return
-                target.x = (t.clientX / window.innerWidth - 0.5)
-                target.y = -(t.clientY / window.innerHeight - 0.5)
-            }
 
             if (!IS_MOBILE) {
                 window.addEventListener('mousemove', onMouseMove)
                 pushCleanup(() => window.removeEventListener('mousemove', onMouseMove))
             }
-            // Touch look-at is skipped on mobile — it yaws the bust off-frame
-            // on first finger contact and makes the hero feel broken.
 
-            const onResize = () => {
+            const syncSize = () => {
                 const nw = container.clientWidth
                 const nh = container.clientHeight
+                if (!nw || !nh) return
                 camera.aspect = nw / nh
                 camera.updateProjectionMatrix()
                 renderer.setSize(nw, nh)
             }
-            window.addEventListener('resize', onResize)
-            pushCleanup(() => window.removeEventListener('resize', onResize))
+            window.addEventListener('resize', syncSize)
+            pushCleanup(() => window.removeEventListener('resize', syncSize))
 
             let elapsed = 0
             let lastTime = performance.now()
-
-            // Smoothed audio — triple-low lerp factors so audio never jerks
             const smooth = { bass: 0, mid: 0, treble: 0, volume: 0 }
-            // Previous smooth values for velocity damping
             const prev   = { bass: 0, mid: 0, treble: 0, volume: 0 }
-
-            // Smoothed scroll — lerped separately so camera glides, not snaps
             let scrollSmooth = 0
 
+            /* Mobile: keep the bust locked to the resting camera — scroll-driven
+               zoom/yaw is what looked “broken” after scrolling away and back
+               (MotionValue stuck mid-lerp while the sticky hero remounts). */
+            const applyRestPose = () => {
+                if (!modelGroup) return
+                camera.position.z = IS_MOBILE ? 5.2 : SCROLL.camZFrom
+                camera.position.y = IS_MOBILE ? 0.1 : SCROLL.camYFrom
+                camera.updateProjectionMatrix()
+                modelGroup.position.x = 0
+                modelGroup.rotation.y = 0
+                modelGroup.rotation.x = 0
+                modelGroup.scale.setScalar(baseScale)
+                modelGroup.position.y = baseY
+            }
+
             const animate = () => {
+                if (disposed || !running) return
                 rafId = requestAnimationFrame(animate)
                 const now = performance.now()
-                const delta = (now - lastTime) / 1000
+                const delta = Math.min(0.05, (now - lastTime) / 1000)
                 lastTime = now
                 elapsed += delta
 
                 mouse.x = lerp(mouse.x, target.x, 0.08)
                 mouse.y = lerp(mouse.y, target.y, 0.08)
 
-                // Scroll: read framer-motion MotionValue, lerp heavily
+                if (IS_MOBILE) {
+                    // Gentle bob only — no scroll camera on phones
+                    if (modelGroup) {
+                        applyRestPose()
+                        const bobAmp = 0.04 + (smooth.volume * 0.02)
+                        const raw = audioDataRef?.current ?? { bass: 0, mid: 0, treble: 0, volume: 0 }
+                        smooth.volume = lerp(smooth.volume, raw.volume, 0.08)
+                        modelGroup.position.y = baseY + Math.sin(elapsed * 0.6) * bobAmp
+                        modelGroup.scale.setScalar(baseScale * (1 + (raw.bass || 0) * 0.03))
+                        rimLight.intensity = baseRimIntensity + (raw.treble || 0) * 0.4
+                    }
+                    renderer.render(scene, camera)
+                    return
+                }
+
                 const scrollRaw = scrollProgress ? scrollProgress.get() : 0
                 scrollSmooth = lerp(scrollSmooth, scrollRaw, 0.035)
                 const s = scrollSmooth
@@ -237,79 +236,101 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
                 if (modelGroup) {
                     const raw = audioDataRef?.current ?? { bass: 0, mid: 0, treble: 0, volume: 0 }
 
-                    // First lerp pass — slow approach
                     const b1 = lerp(prev.bass,   raw.bass,   0.015)
                     const m1 = lerp(prev.mid,    raw.mid,    0.018)
                     const t1 = lerp(prev.treble, raw.treble, 0.020)
                     const v1 = lerp(prev.volume, raw.volume, 0.012)
 
-                    // Second lerp pass — smooth out any remaining jitter
                     smooth.bass   = lerp(smooth.bass,   b1, 0.10)
                     smooth.mid    = lerp(smooth.mid,    m1, 0.10)
                     smooth.treble = lerp(smooth.treble, t1, 0.10)
                     smooth.volume = lerp(smooth.volume, v1, 0.10)
 
-                    prev.bass   = b1
-                    prev.mid    = m1
-                    prev.treble = t1
-                    prev.volume = v1
+                    prev.bass = b1; prev.mid = m1; prev.treble = t1; prev.volume = v1
 
-                    // ── Scroll-driven camera ──────────────────────────────
-                    // Soften the left-shift / yaw on mobile so the bust stays
-                    // readable in portrait instead of sliding off-frame.
-                    const modelXTo = IS_MOBILE ? -0.15 : SCROLL.modelXTo
-                    const rotYOff  = IS_MOBILE ? 0.12 : SCROLL.rotYOffset
-                    const camZFrom = IS_MOBILE ? 5.2 : SCROLL.camZFrom
-                    const camZTo   = IS_MOBILE ? 3.6 : SCROLL.camZTo
-                    const camYFrom = IS_MOBILE ? 0.1 : SCROLL.camYFrom
-                    const camYTo   = IS_MOBILE ? 0.7 : SCROLL.camYTo
-                    const baseX    = 0
-
-                    camera.position.z = lerp(camZFrom, camZTo, s)
-                    camera.position.y = lerp(camYFrom, camYTo, s)
+                    camera.position.z = lerp(SCROLL.camZFrom, SCROLL.camZTo, s)
+                    camera.position.y = lerp(SCROLL.camYFrom, SCROLL.camYTo, s)
                     camera.updateProjectionMatrix()
 
-                    // ── Model position: drift left on scroll ──────────────
-                    const targetX = lerp(baseX, baseX + modelXTo, s)
+                    const targetX = lerp(0, SCROLL.modelXTo, s)
                     modelGroup.position.x = lerp(modelGroup.position.x, targetX, 0.04)
-
-                    // ── Audio reactions ───────────────────────────────────
-                    // Bass: barely-there scale breathe
                     modelGroup.scale.setScalar(baseScale * (1 + smooth.bass * 0.04))
 
-                    // Rotation: mouse look + scroll left-turn + mid sway
-                    const rotYTarget = mouse.x * (0.5 + smooth.mid * 0.1) + lerp(0, rotYOff, s)
+                    const rotYTarget = mouse.x * (0.5 + smooth.mid * 0.1) + lerp(0, SCROLL.rotYOffset, s)
                     modelGroup.rotation.y = lerp(modelGroup.rotation.y, rotYTarget, 0.06)
                     modelGroup.rotation.x = lerp(modelGroup.rotation.x, mouse.y * 0.3, 0.06)
 
-                    // Bob: dampened by scroll (stops when zoomed in)
                     const bobAmp = (0.06 + smooth.volume * 0.03) * (1 - s)
                     modelGroup.position.y = baseY + Math.sin(elapsed * (0.6 + smooth.volume * 0.2)) * bobAmp
-
-                    // Treble: soft rim shimmer
                     rimLight.intensity = baseRimIntensity + smooth.treble * 0.5
                 }
 
                 renderer.render(scene, camera)
             }
-            animate()
 
-            // Pause the RAF when the tab is hidden — saves battery on mobile
-            if (IS_MOBILE) {
-                const onVisibilityChange = () => {
-                    if (document.hidden) {
-                        cancelAnimationFrame(rafId)
-                    } else {
-                        lastTime = performance.now()
-                        animate()
-                    }
+            const startLoop = () => {
+                if (disposed || running || !inView || document.hidden) return
+                // Guard against lost contexts after long off-screen periods
+                const gl = renderer.getContext()
+                if (gl && gl.isContextLost?.()) return
+                running = true
+                lastTime = performance.now()
+                syncSize()
+                if (IS_MOBILE) {
+                    scrollSmooth = 0
+                    applyRestPose()
+                } else if (scrollProgress) {
+                    scrollSmooth = scrollProgress.get()
                 }
-                document.addEventListener('visibilitychange', onVisibilityChange)
-                pushCleanup(() => document.removeEventListener('visibilitychange', onVisibilityChange))
+                animate()
             }
 
-            pushCleanup(() => {
+            const stopLoop = () => {
+                running = false
                 cancelAnimationFrame(rafId)
+            }
+
+            // Pause when the sticky hero leaves the viewport — stops GPU thrash
+            // while scrolling Works/Footer, and avoids a stale canvas on return.
+            const io = new IntersectionObserver(
+                ([entry]) => {
+                    inView = entry.isIntersecting && entry.intersectionRatio > 0.05
+                    if (inView) startLoop()
+                    else stopLoop()
+                },
+                { threshold: [0, 0.05, 0.25] },
+            )
+            io.observe(container)
+            pushCleanup(() => io.disconnect())
+
+            const onVisibilityChange = () => {
+                if (document.hidden) stopLoop()
+                else if (inView) startLoop()
+            }
+            document.addEventListener('visibilitychange', onVisibilityChange)
+            pushCleanup(() => document.removeEventListener('visibilitychange', onVisibilityChange))
+
+            const onContextLost = (e) => {
+                e.preventDefault()
+                stopLoop()
+                container.style.opacity = '0'
+            }
+            const onContextRestored = () => {
+                syncSize()
+                container.style.opacity = '1'
+                if (inView) startLoop()
+            }
+            renderer.domElement.addEventListener('webglcontextlost', onContextLost, false)
+            renderer.domElement.addEventListener('webglcontextrestored', onContextRestored, false)
+            pushCleanup(() => {
+                renderer.domElement.removeEventListener('webglcontextlost', onContextLost)
+                renderer.domElement.removeEventListener('webglcontextrestored', onContextRestored)
+            })
+
+            startLoop()
+
+            pushCleanup(() => {
+                stopLoop()
                 envTexture.dispose()
                 renderer.dispose()
                 if (renderer.domElement.parentNode === container) {
@@ -322,9 +343,7 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
 
         return () => {
             disposed = true
-            for (let i = cleanupFns.length - 1; i >= 0; i--) {
-                cleanupFns[i]()
-            }
+            for (let i = cleanupFns.length - 1; i >= 0; i--) cleanupFns[i]()
         }
     }, [])
 
@@ -334,8 +353,6 @@ export default function HeroModel({ className = '', audioDataRef = null, scrollP
             className={`w-full h-full ${className}`}
             style={{
                 overflow: 'hidden',
-                // Let vertical drags scroll the page — WebGL canvases otherwise
-                // eat touchmove and freeze mobile scrolling over the hero.
                 pointerEvents: 'none',
                 touchAction: 'pan-y',
             }}

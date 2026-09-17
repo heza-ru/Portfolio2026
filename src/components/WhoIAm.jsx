@@ -81,7 +81,9 @@ export default function WhoIAm({ isReady = true }) {
                 trigger: rolesEl,
                 start:   'top bottom',
                 end:     'top top',
-                scrub:   IS_MOBILE ? 0.35 : 1,
+                // Mobile: scrub:true tracks the finger 1:1 — lagged scrub (0.35)
+                // fights momentum scrolling and reads as jitter.
+                scrub:   IS_MOBILE ? true : 1,
                 onUpdate(self) {
                     const p = Math.min(1, Math.max(0, self.progress))
                     gsap.set(rows[0], { x: `${ 110 - p * 110}%` })
@@ -92,18 +94,19 @@ export default function WhoIAm({ isReady = true }) {
 
             /* ── 2. Role rows — pin + outer exit + DESIGNER scale & fade ────────
                Shorter scroll distance on mobile so the cover → about handoff
-               feels as brisk as desktop. Soft scrub (0.35) matches desktop’s
-               eased scrub without the 1-frame hitch of scrub:true.           */
+               feels as brisk as desktop.                                     */
             ScrollTrigger.create({
                 trigger:             rolesEl,
                 start:               'top top',
-                end:                 () => `+=${Math.round((window.visualViewport?.height || window.innerHeight) * (IS_MOBILE ? 0.85 : 1.2))}`,
+                end:                 () => `+=${Math.round((window.visualViewport?.height || window.innerHeight) * (IS_MOBILE ? 0.7 : 1.2))}`,
                 pin:                 true,
-                pinType:             IS_MOBILE ? 'transform' : 'fixed',
-                scrub:               IS_MOBILE ? 0.35 : 0.4,
+                // fixed pins coexist better with the sticky hero on iOS;
+                // transform pins fight native momentum and feel jittery.
+                pinType:             'fixed',
+                scrub:               IS_MOBILE ? true : 0.4,
                 pinSpacing:          true,
-                anticipatePin:       1,
-                fastScrollEnd:       true,
+                anticipatePin:       IS_MOBILE ? 0 : 1,
+                fastScrollEnd:       !IS_MOBILE,
                 invalidateOnRefresh: true,
                 onUpdate(self) {
                     const progress = Math.min(1, Math.max(0, self.progress))

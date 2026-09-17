@@ -85,7 +85,7 @@ function App() {
             {!IS_MOBILE && <GlobalDigitalEffect />}
 
             <ScrollProgressBar />
-            {!IS_MOBILE && <IdleOverlay isReady={loaded} />}
+            <IdleOverlay isReady={loaded} />
 
             <main id="main-content" className="relative z-10" style={{ backgroundColor: '#0A0A0A' }}>
                 <Hero isLoaded={loaded} audioDataRef={audioDataRef} />
